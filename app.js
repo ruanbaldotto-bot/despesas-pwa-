@@ -18,8 +18,11 @@ if (btnInstall) {
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('./sw.js');
 }
+if (window.pdfjsLib && window.pdfjsLib.GlobalWorkerOptions) {
+  window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@4.8.69/build/pdf.worker.min.js';
+}
 
-const DB_NAME='despesasDB'; const DB_VERSION=2; let db;
+const DB_NAME='despesasDB'; const DB_VERSION=3; let db;
 function openDB(){
   return new Promise((resolve,reject)=>{
     const req=indexedDB.open(DB_NAME, DB_VERSION);
@@ -63,9 +66,9 @@ function fmtCurrency(n){ try{ return new Intl.NumberFormat('pt-BR',{style:'curre
 function toNumberLocale(s){ if(typeof s==='number') return s; if(!s) return 0; return parseFloat(String(s).replace(/\./g,'').replace(',','.')); }
 function dateISO(d){ const x=new Date(d); return x.toISOString().slice(0,10); }
 
+// UI bits
 const tabs=document.querySelectorAll('.tab'); const panels=document.querySelectorAll('.tab-panel');
 tabs.forEach(b=>b.addEventListener('click',()=>{ tabs.forEach(x=>x.classList.remove('active')); panels.forEach(p=>p.classList.remove('active')); b.classList.add('active'); document.getElementById(b.dataset.tab).classList.add('active'); }));
-
 const mes=document.getElementById('mes'); const mesResumo=document.getElementById('mesResumo'); const today=new Date(); mes.value=yyyymm(today); mesResumo.value=yyyymm(today);
 const formAdd=document.getElementById('formAdd'); const valor=document.getElementById('valor'); const dataIn=document.getElementById('data'); const categoriaSel=document.getElementById('categoria'); const nota=document.getElementById('nota'); dataIn.value=dateISO(today);
 const listaLanc=document.getElementById('listaLancamentos'); const emptyLanc=document.getElementById('emptyLanc');
@@ -86,7 +89,8 @@ async function refreshCategories(selectOnly=false){
     listaCats.appendChild(item);
   }
   listaCats.querySelectorAll('button[data-del]').forEach(btn=>btn.addEventListener('click', async()=>{
-    const id=Number(btn.dataset.del); if(confirm('Excluir esta categoria?')){ await deleteCategory(id); await refreshCategories(); await renderResumo(); }}));
+    const id=Number(btn.dataset.del); if(confirm('Excluir esta categoria?')){ await deleteCategory(id); await refreshCategories(); await renderResumo(); }
+  }));
   listaCats.querySelectorAll('button[data-edit]').forEach(btn=>btn.addEventListener('click', async()=>{
     const id=Number(btn.dataset.edit); const cats=await listCategories(); const c=cats.find(x=>x.id===id); if(!c) return;
     const nome=prompt('Nome da categoria:', c.name) ?? c.name;
@@ -109,7 +113,9 @@ async function renderLanc(){
     listaLanc.appendChild(item);
   }
   emptyLanc.hidden=any;
-  listaLanc.querySelectorAll('button[data-del]').forEach(btn=>btn.addEventListener('click', async()=>{ const id=Number(btn.dataset.del); if(confirm('Apagar este lançamento?')){ await deleteExpense(id); await renderLanc(); await renderResumo(); }}));
+  listaLanc.querySelectorAll('button[data-del]').forEach(btn=>btn.addEventListener('click', async()=>{
+    const id=Number(btn.dataset.del); if(confirm('Apagar este lançamento?')){ await deleteExpense(id); await renderLanc(); await renderResumo(); }
+  }));
 }
 
 async function renderResumo(){
@@ -133,9 +139,10 @@ async function refreshCards(){
     item.innerHTML=`<div class=\"grow\"><div class=\"title\">💳 ${c.name}</div><div class=\"sub\">Fechamento: ${c.closeDay||'—'} • Vencimento: ${c.dueDay||'—'}</div></div><div class=\"actions\"><button class=\"ghost danger\" data-del=\"${c.id}\">Excluir</button></div>`;
     listaCards.appendChild(item);
   }
-  listaCards.querySelectorAll('button[data-del]').forEach(btn=>btn.addEventListener('click', async()=>{ const id=Number(btn.dataset.del); if(confirm('Excluir este cartão?')){ await deleteCard(id); await refreshCards(); }}));
+  listaCards.querySelectorAll('button[data-del]').forEach(btn=>btn.addEventListener('click', async()=>{ const id=Number(btn.dataset.del); if(confirm('Excluir este cartão?')){ await deleteCard(id); await refreshCards(); } }));
 }
 
+// Export CSV
 async function exportCSV(){
   const yymm=mes.value; const all=await listExpensesAll(); const cats=await listCategories(); const mapCat=Object.fromEntries(cats.map(c=>[c.id,c]));
   const list=all.filter(e=>withinMonth(e.date,yymm)); if(list.length===0){ alert('Não há lançamentos neste mês.'); return; }
@@ -149,6 +156,7 @@ async function exportCSV(){
   const csv=rows.map(r=>r.join(',')).join('\n'); const blob=new Blob([csv],{type:'text/csv'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download=`despesas_${yymm}.csv`; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
 }
 
+// PDF parse with Santander heuristics
 async function parseInvoicePDF(file){
   if(!window['pdfjsLib']) throw new Error('pdf.js não carregou');
   const data=await file.arrayBuffer();
@@ -157,33 +165,40 @@ async function parseInvoicePDF(file){
   for(let p=1;p<=pdf.numPages;p++){
     const page=await pdf.getPage(p);
     const content=await page.getTextContent();
-    const text=content.items.map(i=>i.str).join(' ');
-    const split=text.split(/(?=\d{1,2}[\/\-\s](?:\d{1,2}|jan|fev|mar|abr|mai|jun|jul|ago|set|out|nov|dez))/i);
-    if(split.length>1) lines=lines.concat(split); else lines.push(text);
+    const text=content.items.map(i=>i.str).join(' ').replace(/\s{2,}/g,' ').trim();
+    lines=lines.concat(text.split(/(?=\d{1,2}[\/\-]\d{1,2}\b)/g));
   }
-  lines=lines.map(s=>s.replace(/\s{2,}/g,' ').replace(/\u00A0/g,' ').trim()).filter(s=>s.length>0);
+  lines=lines.map(s=>s.replace(/\u00A0/g,' ').replace(/\s{2,}/g,' ').trim())
+    .filter(s=>s && !/PAGAMENTO DE FATURA/i.test(s))
+    .filter(s=>!/Resumo da Fatura|Histórico de Faturas|Opções de Pagamento|Parcelamento de Fatura|Ficha de Compensação|Boleto/i.test(s));
+
   const items=[];
-  const reDate=/(?<d>\d{1,2})[\/\-\s](?<m>\d{1,2}|jan|fev|mar|abr|mai|jun|jul|ago|set|out|nov|dez)/i;
-  const reAmount=/R\$\s*([\d\.\,]+)/;
-  const reInstall=/(?:(\d{1,2})\s*\/\s*(\d{1,2}))|(?:(\d{1,2})\s*x)/i;
-  for(const raw of lines){
-    const s=raw; const mAmount=s.match(reAmount); if(!mAmount) continue;
-    let desc=s; let day=1; const mDate=s.match(reDate);
-    if(mDate){ const idx=mDate.index+(mDate[0]||'').length; day=parseInt(mDate.groups?.d||'1',10); desc=s.slice(idx).trim(); }
-    desc=desc.replace(reAmount,'').trim();
-    let instNum=null,instTot=null; const mInst=s.match(reInstall);
-    if(mInst){ if(mInst[1]&&mInst[2]){ instNum=parseInt(mInst[1]); instTot=parseInt(mInst[2]); } else if(mInst[3]){ instTot=parseInt(mInst[3]); } }
-    const amt=parseFloat(String(mAmount[1]).replace(/\./g,'').replace(',','.'));
-    items.push({day, desc, amount:amt, installmentsTotal:instTot, installmentNumber:instNum});
+  const reValue = /R\$\s*([\d\.]+\,[\d]{2})|(^|[^\d])([\d\.]+\,[\d]{2})($|[^\d])/;
+  const reDate  = /(^|\s)(\d{1,2})[\/\-](\d{1,2})(?=\s)/;
+  const reInst  = /(\d{1,2})\s*\/\s*(\d{1,2})|(\d{1,2})\s*x/;
+
+  for(const s of lines){
+    const mVal=s.match(reValue); const mDate=s.match(reDate);
+    if(!mVal || !mDate) continue;
+    const vStr=(mVal[1]||mVal[3]||'').replace(/\./g,'').replace(',','.');
+    const amount=parseFloat(vStr);
+    if(!isFinite(amount) || amount<=0) continue;
+    const day=parseInt(mDate[2],10);
+    let desc=s.substring(mDate.index + mDate[0].length).trim();
+    desc=desc.replace(/R\$\s*[\d\.]+\,[\d]{2}$/,'').replace(/[\d\.]+\,[\d]{2}$/,'').trim();
+    let instNum=null, instTot=null; const mInst=s.match(reInst);
+    if(mInst){ if(mInst[1]&&mInst[2]){ instNum=parseInt(mInst[1],10); instTot=parseInt(mInst[2],10);} else if(mInst[3]){ instTot=parseInt(mInst[3],10);} }
+    items.push({day, desc, amount, installmentsTotal:instTot, installmentNumber:instNum});
   }
   const unique=[]; const seen=new Set();
-  for(const it of items){ const key=[it.day,it.amount,(it.desc||'').slice(0,30)].join('|'); if(it.amount>=0.01 && !seen.has(key)){ unique.push(it); seen.add(key);} }
+  for(const it of items){ const key=[it.day,it.amount.toFixed(2),(it.desc||'').slice(0,40)].join('|'); if(!seen.has(key)){ unique.push(it); seen.add(key);} }
   return unique;
 }
 
 document.getElementById('btnExport').addEventListener('click', exportCSV);
 mes.addEventListener('change', renderLanc);
 mesResumo.addEventListener('change', renderResumo);
+
 formAdd.addEventListener('submit', async (e)=>{
   e.preventDefault();
   const val=parseFloat(String(valor.value).replace(/\./g,'').replace(',','.'));
@@ -194,12 +209,7 @@ formAdd.addEventListener('submit', async (e)=>{
   valor.value=''; nota.value=''; dataIn.value=dateISO(new Date());
   await renderLanc(); await renderResumo();
 });
-formCat.addEventListener('submit', async (e)=>{
-  e.preventDefault();
-  const nome=(catNome.value||'').trim(); const icone=(catIcone.value||'').trim()||'🧰'; const orc=catOrc.value===''?null:parseFloat(String(catOrc.value).replace(/\./g,'').replace(',','.'));
-  if(!nome){ alert('Informe um nome.'); return; }
-  await addCategory({name:nome, icon:icone, budgetMonthly:orc}); catNome.value=''; catIcone.value=''; catOrc.value=''; await refreshCategories(); await renderResumo();
-});
+
 formCard.addEventListener('submit', async (e)=>{
   e.preventDefault(); const name=(cardNome.value||'').trim(); const closeDay=cardFech.value?parseInt(cardFech.value,10):null; const dueDay=cardVenc.value?parseInt(cardVenc.value,10):null;
   if(!name){ alert('Informe o nome do cartão.'); return; } await addCard({name, closeDay, dueDay}); cardNome.value=''; cardFech.value=''; cardVenc.value=''; await refreshCards();
@@ -214,7 +224,7 @@ formFatura.addEventListener('submit', async (e)=>{
   previewList.innerHTML='<div class=\"sub\">Lendo fatura e tentando identificar compras…</div>'; previewCard.style.display='block';
   try{
     const parsed=await parseInvoicePDF(file);
-    if(!parsed||parsed.length===0){ previewList.innerHTML='<div class=\"sub\">Não consegui identificar itens automaticamente. Você ainda pode manter o PDF anexado à fatura para consulta.</div>'; importBuffer=[]; return; }
+    if(!parsed||parsed.length===0){ previewList.innerHTML='<div class=\"sub\">Não consegui identificar itens automaticamente. Você ainda pode manter o PDF anexado.</div>'; importBuffer=[]; return; }
     importBuffer=parsed.map(it=>({...it, categoryId:null}));
     await buildPreview(cardName, yymm);
   }catch(err){ console.error(err); previewList.innerHTML='<div class=\"sub\">Erro ao ler o PDF. Talvez seja necessário exportar CSV pelo app do banco.</div>'; importBuffer=[]; }
