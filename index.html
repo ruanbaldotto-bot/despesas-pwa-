@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0b1220">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <title>Despesas</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="app-header">
+    <h1>Despesas</h1>
+    <button id="btnInstall" class="ghost" hidden>Instalar</button>
+  </header>
+
+  <nav class="tabs">
+    <button class="tab active" data-tab="lancamentos">Lançamentos</button>
+    <button class="tab" data-tab="resumo">Resumo</button>
+    <button class="tab" data-tab="categorias">Categorias</button>
+  </nav>
+
+  <main>
+    <!-- Lançamentos -->
+    <section id="lancamentos" class="tab-panel active">
+      <div class="card">
+        <div class="row">
+          <label for="mes">Mês:</label>
+          <input type="month" id="mes">
+          <button id="btnExport" class="ghost">Exportar CSV</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Novo lançamento</h2>
+        <form id="formAdd">
+          <div class="grid-2">
+            <div>
+              <label>Valor (R$)</label>
+              <input type="number" inputmode="decimal" step="0.01" min="0" id="valor" required placeholder="0,00">
+            </div>
+            <div>
+              <label>Data</label>
+              <input type="date" id="data" required>
+            </div>
+          </div>
+          <div class="grid-2">
+            <div>
+              <label>Categoria</label>
+              <select id="categoria" required></select>
+            </div>
+            <div>
+              <label>Observação</label>
+              <input type="text" id="nota" placeholder="Opcional (ex.: mercado, frete...)">
+            </div>
+          </div>
+          <div class="row end">
+            <button type="submit" class="primary">Adicionar</button>
+          </div>
+        </form>
+      </div>
+
+      <div class="card">
+        <h2>Lançamentos do mês</h2>
+        <div id="listaLancamentos" class="list"></div>
+        <div id="emptyLanc" class="empty" hidden>Sem lançamentos neste mês.</div>
+      </div>
+    </section>
+
+    <!-- Resumo -->
+    <section id="resumo" class="tab-panel">
+      <div class="card">
+        <div class="row">
+          <label for="mesResumo">Mês:</label>
+          <input type="month" id="mesResumo">
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Total do mês</h2>
+        <div id="totalMes" class="total"></div>
+      </div>
+
+      <div class="card">
+        <h2>Por categoria</h2>
+        <div id="listaResumoCats" class="list"></div>
+        <div id="emptyResumo" class="empty" hidden>Sem dados no mês.</div>
+      </div>
+    </section>
+
+    <!-- Categorias -->
+    <section id="categorias" class="tab-panel">
+      <div class="card">
+        <h2>Nova categoria</h2>
+        <form id="formCat">
+          <div class="grid-3">
+            <div>
+              <label>Nome</label>
+              <input type="text" id="catNome" required>
+            </div>
+            <div>
+              <label>Ícone (emoji)</label>
+              <input type="text" id="catIcone" placeholder="🧰" maxlength="4">
+            </div>
+            <div>
+              <label>Orçamento (R$/mês)</label>
+              <input type="number" step="0.01" min="0" id="catOrcamento" placeholder="opcional">
+            </div>
+          </div>
+          <div class="row end">
+            <button class="primary" type="submit">Adicionar</button>
+          </div>
+        </form>
+      </div>
+
+      <div class="card">
+        <h2>Categorias</h2>
+        <div id="listaCategorias" class="list"></div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="app-footer">
+    <small>Despesas PWA • Offline • Seus dados ficam apenas no seu iPhone</small>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
