@@ -193,11 +193,11 @@
     <small>Despesas PWA • Offline • Seus dados ficam apenas no seu iPhone</small>
   </footer>
 
-  <!-- pdf.js + workerSrc -->
-  <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@4.8.69/build/pdf.min.js"></script>
+  <!-- pdf.js LEGACY build (melhor compatibilidade iOS Safari) -->
+  <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@4.8.69/legacy/build/pdf.min.js"></script>
   <script>
     if (window.pdfjsLib && window.pdfjsLib.GlobalWorkerOptions) {
-      window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@4.8.69/build/pdf.worker.min.js';
+      window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@4.8.69/legacy/build/pdf.worker.min.js';
     }
   </script>
 
