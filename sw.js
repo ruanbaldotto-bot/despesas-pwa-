@@ -1,5 +1,5 @@
 
-const CACHE_NAME = 'despesas-cache-cc-v3';
+const CACHE_NAME = 'despesas-cache-cc-v2';
 const ASSETS = [
   './',
   './index.html',
