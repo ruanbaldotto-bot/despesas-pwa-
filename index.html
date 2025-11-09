@@ -21,6 +21,7 @@
     <button class="tab active" data-tab="lancamentos">Lançamentos</button>
     <button class="tab" data-tab="resumo">Resumo</button>
     <button class="tab" data-tab="categorias">Categorias</button>
+    <button class="tab" data-tab="cartoes">Cartões</button>
   </nav>
 
   <main>
@@ -35,7 +36,7 @@
       </div>
 
       <div class="card">
-        <h2>Novo lançamento</h2>
+        <h2>Novo lançamento (dinheiro)</h2>
         <form id="formAdd">
           <div class="grid-2">
             <div>
@@ -121,11 +122,79 @@
         <div id="listaCategorias" class="list"></div>
       </div>
     </section>
+
+    <!-- Cartões -->
+    <section id="cartoes" class="tab-panel">
+      <div class="card">
+        <h2>Novo cartão</h2>
+        <form id="formCard">
+          <div class="grid-3">
+            <div>
+              <label>Nome do cartão</label>
+              <input type="text" id="cardNome" placeholder="ex.: Nubank (final 1234)" required>
+            </div>
+            <div>
+              <label>Fechamento (dia)</label>
+              <input type="number" id="cardFechamento" min="1" max="31" placeholder="ex.: 10">
+            </div>
+            <div>
+              <label>Vencimento (dia)</label>
+              <input type="number" id="cardVencimento" min="1" max="31" placeholder="ex.: 17">
+            </div>
+          </div>
+          <div class="row end">
+            <button class="primary" type="submit">Adicionar cartão</button>
+          </div>
+        </form>
+      </div>
+
+      <div class="card">
+        <h2>Cartões</h2>
+        <div id="listaCartoes" class="list"></div>
+      </div>
+
+      <div class="card">
+        <h2>Importar fatura (PDF)</h2>
+        <form id="formFatura">
+          <div class="grid-3">
+            <div>
+              <label>Cartão</label>
+              <select id="selCard" required></select>
+            </div>
+            <div>
+              <label>Mês da fatura</label>
+              <input type="month" id="faturaMes" required>
+            </div>
+            <div>
+              <label>PDF da fatura</label>
+              <input type="file" id="faturaPDF" accept="application/pdf" required>
+            </div>
+          </div>
+          <div class="row end">
+            <button class="primary" type="submit">Anexar & Importar</button>
+          </div>
+        </form>
+        <div class="sub" style="margin-top:6px">
+          <span class="badge">Beta</span> Tenta ler compras e parcelas automaticamente. Você pode revisar antes de salvar.
+        </div>
+      </div>
+
+      <div class="card" id="previewCard" style="display:none">
+        <h2>Pré-visualização da importação</h2>
+        <div id="previewList" class="list"></div>
+        <div class="row end">
+          <button id="btnSalvarImport" class="primary">Salvar no mês</button>
+        </div>
+      </div>
+    </section>
   </main>
 
   <footer class="app-footer">
     <small>Despesas PWA • Offline • Seus dados ficam apenas no seu iPhone</small>
   </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@4.8.69/build/pdf.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@4.8.69/build/pdf.worker.min.js"></script>
 
   <script src="app.js"></script>
 </body>

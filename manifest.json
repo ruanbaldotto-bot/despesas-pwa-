@@ -1,7 +1,7 @@
 {
   "name": "Despesas",
   "short_name": "Despesas",
-  "description": "Controle simples de despesas • Offline • Instalável no iPhone",
+  "description": "Controle de despesas • Offline • Cartões com importação de fatura (PDF – beta)",
   "start_url": ".",
   "display": "standalone",
   "background_color": "#0b1220",
