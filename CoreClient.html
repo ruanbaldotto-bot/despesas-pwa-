@@ -1,0 +1,89 @@
+<script>
+(function(root){
+'use strict';
+const fail=m=>{throw new Error(m);};
+function integer(n){if(!Number.isSafeInteger(n))fail('Valor fora do intervalo seguro.');return n;}
+function money(v){
+ let s=String(v).trim().replace(/^R\$\s*/,'');
+ if(s.includes(',')){if(!/^-?(?:\d+|\d{1,3}(?:\.\d{3})+),\d{1,2}$/.test(s))fail('Valor monetário inválido.');s=s.replaceAll('.','').replace(',','.');}
+ if(!/^-?\d+(?:\.\d{1,2})?$/.test(s))fail('Use no máximo duas casas decimais.');
+ const neg=s.startsWith('-');s=s.replace('-','');const [a,b='']=s.split('.');return integer((neg?-1:1)*(Number(a)*100+Number(b.padEnd(2,'0'))));
+}
+function cents(e){return e.amountCents!=null?integer(e.amountCents):money(Number(e.amount).toFixed(2));}
+function month(s){if(!/^\d{4}-(0[1-9]|1[0-2])$/.test(s))fail('Mês inválido.');return s;}
+function addMonth(s,n){month(s);let d=new Date(s+'-01T12:00:00Z');d.setUTCMonth(d.getUTCMonth()+n);return d.toISOString().slice(0,7);}
+function date(s){if(!/^\d{4}-\d{2}-\d{2}$/.test(s)||new Date(s+'T12:00:00Z').toISOString().slice(0,10)!==s)fail('Data ISO inválida.');return s;}
+function split(total,parts,percent=false){
+ integer(total);const sign=total<0?-1:1;total=Math.abs(total);
+ if(!parts.length||new Set(parts.map(p=>p.personId)).size!==parts.length)fail('Responsáveis repetidos ou ausentes.');
+ parts.forEach(p=>{if(!p.personId||!Number.isSafeInteger(p.value)||p.value<0)fail('Divisão inválida.');});
+ const sum=parts.reduce((s,p)=>integer(s+p.value),0);
+ if(sum!==(percent?10000:total))fail(percent?'Percentuais devem somar 100%.':'Valores devem somar a compra.');
+ if(!percent)return parts.map(p=>({personId:p.personId,amountCents:sign*p.value}));
+ const rows=parts.map((p,i)=>{const v=BigInt(total)*BigInt(p.value);return {personId:p.personId,amountCents:Number(v/10000n),rem:Number(v%10000n),i};});
+ let rest=total-rows.reduce((s,p)=>s+p.amountCents,0);
+ [...rows].sort((a,b)=>b.rem-a.rem||a.i-b.i).slice(0,rest).forEach(p=>p.amountCents++);
+ return rows.map(({personId,amountCents})=>({personId,amountCents:sign*amountCents}));
+}
+function csvRows(text){
+ const first=text.split(/\r?\n/)[0];const sep=first.includes(';')?';':',';
+ const rows=[];let row=[],cell='',quote=false;
+ for(let i=0;i<text.length;i++){let c=text[i];if(c==='"'){if(quote&&text[i+1]==='"'){cell+='"';i++;}else quote=!quote;}
+ else if(!quote&&(c===sep||c==='\n')){row.push(cell.replace(/\r$/,''));cell='';if(c==='\n'){rows.push(row);row=[];}}
+ else cell+=c;}
+ if(quote)fail('CSV com aspas incompletas.');if(cell||row.length){row.push(cell.replace(/\r$/,''));rows.push(row);}return rows;
+}
+const normalize=s=>s.normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim().toLowerCase();
+const adapters={
+ 'Santander':{date:['data','data da compra'],desc:['descricao','estabelecimento'],value:['valor','valor (r$)']},
+ 'Porto Bank':{date:['data','data compra'],desc:['descricao','estabelecimento'],value:['valor','valor r$']},
+ 'Mercado Pago':{date:['data','date'],desc:['descricao','description'],value:['valor','amount']},
+ 'Nubank':{date:['date','data'],desc:['title','descricao'],value:['amount','valor']}
+};
+function parseDate(s){s=String(s).trim();if(/^\d{2}\/\d{2}\/\d{4}$/.test(s))s=s.split('/').reverse().join('-');return date(s);}
+function installment(desc){const m=desc.match(/(?:parcela\s*)?(\d{1,2})\s*(?:\/| de )\s*(\d{1,2})\s*$/i);if(!m)return {};const n=+m[1],t=+m[2];if(!n||n>t)fail('Parcelamento inválido.');return {installmentNumber:n,installmentsTotal:t};}
+function extractTotal(text){const values=[];for(const line of text.split(/\r?\n/)){const m=normalize(line).match(/^(?:total da fatura|total a pagar|valor total da fatura|total liquido)\s*[:\-]?\s*(?:r\$\s*)?(-?[\d.]+,\d{2})$/);if(m)values.push(money(m[1]));}const unique=[...new Set(values)];return unique.length===1?unique[0]:null;}
+function parse(text,bank,format){
+ const adapter=adapters[bank];if(!adapter)fail('Banco não suportado.');const items=[],issues=[];
+ if(format==='csv'){
+ const rows=csvRows(text.replace(/^\uFEFF/,''));const heads=(rows.shift()||[]).map(normalize);
+ const col=names=>heads.findIndex(h=>names.includes(h));const di=col(adapter.date),ni=col(adapter.desc),vi=col(adapter.value);
+ if([di,ni,vi].includes(-1))fail('Cabeçalho não reconhecido. Use data, descricao, valor; datas com ano.');
+ rows.forEach((r,i)=>{if(r.every(v=>!v.trim()))return;try{const note=r[ni]?.trim();if(!note)fail('Descrição ausente.');items.push(make(parseDate(r[di]),note,money(r[vi])));}catch(e){issues.push(`Linha ${i+2}: ${e.message}`);}});
+ }else{
+ text.split(/\r?\n/).forEach((line,i)=>{if(!line.trim()||extractTotal(line)!==null)return;const m=line.match(/^\s*(\d{2}\/\d{2}\/\d{4}|\d{4}-\d{2}-\d{2})\s+(.+?)\s+(?:R\$\s*)?(-?[\d.]+,\d{2})\s*$/);if(!m){issues.push(`Linha ${i+1} não reconhecida: revise no documento.`);return;}try{items.push(make(parseDate(m[1]),m[2],money(m[3])));}catch(e){issues.push(`Linha ${i+1}: ${e.message}`);}});
+ }
+ return {items,issues,reportedTotalCents:extractTotal(text)};
+}
+function make(dateValue,note,value){const kind=/pagamento/i.test(note)?'bankPayment':/estorno|credito/i.test(normalize(note))?'refund':'purchase';return {date:dateValue,note,amountCents:kind==='purchase'?value:-Math.abs(value),kind,...installment(note)};}
+function fingerprint(e){return JSON.stringify([e.cardId,e.invoiceMonth,e.date?.slice(0,10),normalize(e.note||''),cents(e),e.installmentNumber||null,e.installmentsTotal||null]);}
+function reconcile(items,total){integer(total);const sum=items.reduce((s,e)=>integer(s+cents(e)),0);return {sum,difference:integer(total-sum),ok:sum===total};}
+function validateImport(items,existing,total){if(!items.length)fail('Sem lançamentos.');items.forEach(e=>{date(e.date);month(e.invoiceMonth);cents(e);if(!e.note?.trim()||!e.cardId)fail('Compra incompleta.');});if(!reconcile(items,total).ok)fail('Total não conciliado.');
+ const old=new Set(existing.map(fingerprint)),seen=new Set();for(const e of items){const key=fingerprint(e);if(old.has(key)||seen.has(key))fail('Possível duplicidade. Revise as compras coincidentes antes de importar.');seen.add(key);}return items;}
+function project(expenses,start,horizon){
+ month(start);if(![3,6,12,24].includes(horizon))fail('Horizonte inválido.');const out=Array.from({length:horizon},(_,i)=>({month:addMonth(start,i),confirmed:0,estimated:0,items:[]}));
+ const actual=new Set(expenses.filter(e=>e.groupId).map(e=>`${e.groupId}|${e.invoiceMonth||e.date.slice(0,7)}`));
+ const latest=new Map();for(const e of expenses){const key=e.groupId||e.id;const prior=latest.get(key);if(!prior||(prior.invoiceMonth||prior.date.slice(0,7))<(e.invoiceMonth||e.date.slice(0,7)))latest.set(key,e);}
+ for(const e of expenses){const base=e.invoiceMonth||e.date.slice(0,7);const direct=out.find(r=>r.month===base);if(direct&&e.kind!=='bankPayment'){direct.confirmed=integer(direct.confirmed+cents(e));direct.items.push({...e,estimated:false});}
+ if(e.kind==='bankPayment'||e.kind==='refund'||latest.get(e.groupId||e.id)!==e)continue;
+ const remaining=e.installmentsTotal&&e.installmentNumber?e.installmentsTotal-e.installmentNumber:0;
+ for(const target of out){const m=target.month;const n=(Number(m.slice(0,4))-Number(base.slice(0,4)))*12+Number(m.slice(5))-Number(base.slice(5));if(n<=0||(!e.recurring&&n>remaining))continue;if(actual.has(`${e.groupId}|${m}`))continue;const row=out.find(r=>r.month===m);if(row){row.estimated=integer(row.estimated+cents(e));row.items.push({...e,invoiceMonth:m,estimated:true,installmentNumber:remaining?e.installmentNumber+n:null});}}
+ }return out;
+}
+function validateGroup(rows){
+ if(rows.length<2||rows.some(e=>!e.installmentNumber||!e.cardId)||new Set(rows.map(e=>e.cardId)).size!==1||new Set(rows.map(e=>e.installmentsTotal)).size!==1||new Set(rows.map(cents)).size!==1||new Set(rows.map(e=>e.installmentNumber)).size!==rows.length)fail('Selecione parcelas distintas do mesmo cartão, valor e total.');
+ const first=rows[0];for(const e of rows)if(addMonth(first.invoiceMonth||first.date.slice(0,7),e.installmentNumber-first.installmentNumber)!==(e.invoiceMonth||e.date.slice(0,7)))fail('Meses e sequência das parcelas não conferem.');return true;
+}
+function groupMembers(expenses,ids){const selected=expenses.filter(e=>ids.includes(e.id));if(selected.length!==ids.length)fail('Seleção de parcelas inválida.');const groups=[...new Set(selected.map(e=>e.groupId).filter(Boolean))];if(groups.length>1)fail('Não associe grupos já distintos sem revisar o histórico.');const rows=groups.length?expenses.filter(e=>e.groupId===groups[0]||ids.includes(e.id)):selected;validateGroup(rows);return rows;}
+function allocations(expense,events){const relevant=events.filter(e=>e.type==='allocation'&&(e.expenseId===expense.id||(expense.groupId&&e.groupId===expense.groupId&&e.propagate)));return relevant.sort((a,b)=>(a.sequence||0)-(b.sequence||0)||String(a.createdAt||'').localeCompare(b.createdAt||'')).at(-1)?.parts||[];}
+function statement(personId,m,expenses,events){month(m);const lines=[];for(const e of expenses){if((e.invoiceMonth||e.date.slice(0,7))!==m||e.kind==='bankPayment')continue;const part=allocations(e,events).find(p=>p.personId===personId);if(part)lines.push({date:e.date.slice(0,10),note:e.note,amountCents:part.amountCents});}
+ const total=lines.reduce((s,e)=>integer(s+e.amountCents),0),payments=events.filter(e=>e.type==='familyPayment'&&e.personId===personId&&e.month===m);const paid=payments.reduce((s,e)=>integer(s+e.amountCents),0);return {personId,month:m,lines,total,paid,pending:integer(total-paid),payments};}
+function csvCell(v){let s=String(v??'');if(/^[\s]*[=+@-]/.test(s))s="'"+s;return '"'+s.replaceAll('"','""')+'"';}
+async function key(password,salt,usage){if(password.length<12)fail('Use uma senha com pelo menos 12 caracteres.');const material=await crypto.subtle.importKey('raw',new TextEncoder().encode(password),'PBKDF2',false,['deriveKey']);return crypto.subtle.deriveKey({name:'PBKDF2',salt,iterations:310000,hash:'SHA-256'},material,{name:'AES-GCM',length:256},false,[usage]);}
+async function encrypt(data,password){const salt=crypto.getRandomValues(new Uint8Array(16)),iv=crypto.getRandomValues(new Uint8Array(12));const k=await key(password,salt,'encrypt');const body=await crypto.subtle.encrypt({name:'AES-GCM',iv},k,new TextEncoder().encode(JSON.stringify(data)));return {format:'fatura-backup-v1',salt:[...salt],iv:[...iv],body:[...new Uint8Array(body)]};}
+async function decrypt(envelope,password){if(envelope.format!=='fatura-backup-v1'||envelope.salt?.length!==16||envelope.iv?.length!==12||!Array.isArray(envelope.body))fail('Backup inválido.');const k=await key(password,new Uint8Array(envelope.salt),'decrypt');const body=await crypto.subtle.decrypt({name:'AES-GCM',iv:new Uint8Array(envelope.iv)},k,new Uint8Array(envelope.body));return JSON.parse(new TextDecoder().decode(body));}
+const api={money,cents,month,date,addMonth,split,validateGroup,groupMembers,csvRows,adapters,extractTotal,parse,installment,fingerprint,reconcile,validateImport,project,allocations,statement,csvCell,encrypt,decrypt};
+if(typeof module!=='undefined')module.exports=api;else root.Fatura=api;
+})(globalThis);
+
+</script>

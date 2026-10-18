@@ -1,40 +1,5 @@
-
-const CACHE_NAME = 'despesas-cache-cc-v2';
-const ASSETS = [
-  './',
-  './index.html',
-  './styles.css',
-  './app.js',
-  './manifest.json',
-  './icons/icon-192.png',
-  './icons/icon-512.png',
-  './icons/apple-touch-icon.png'
-];
-self.addEventListener('install', (e) => {
-  e.waitUntil((async () => {
-    const cache = await caches.open(CACHE_NAME);
-    await cache.addAll(ASSETS);
-    self.skipWaiting();
-  })());
-});
-self.addEventListener('activate', (e) => {
-  e.waitUntil((async () => {
-    const keys = await caches.keys();
-    await Promise.all(keys.map(k => (k !== CACHE_NAME ? caches.delete(k) : null)));
-    self.clients.claim();
-  })());
-});
-self.addEventListener('fetch', (e) => {
-  e.respondWith((async () => {
-    const cached = await caches.match(e.request);
-    if (cached) return cached;
-    try {
-      const resp = await fetch(e.request, {mode:'cors'});
-      const cache = await caches.open(CACHE_NAME);
-      cache.put(e.request, resp.clone());
-      return resp;
-    } catch (err) {
-      return cached || new Response('Offline', {status:503, statusText:'Offline'});
-    }
-  })());
-});
+importScripts('./assets.js');
+const CACHE_NAME='despesas-fatura-'+self.APP_VERSION;
+self.addEventListener('install',e=>e.waitUntil(caches.open(CACHE_NAME).then(c=>c.addAll([...self.APP_ASSETS,'./assets.js']))));
+self.addEventListener('activate',e=>e.waitUntil((async()=>{for(const key of await caches.keys())if(key!==CACHE_NAME&&(key.startsWith('despesas-cache-')||key.startsWith('despesas-fatura-')))await caches.delete(key);await self.clients.claim();})()));
+self.addEventListener('fetch',e=>{const url=new URL(e.request.url);if(e.request.method!=='GET'||url.origin!==self.location.origin)return;const allowed=self.APP_ASSETS.some(a=>new URL(a,self.registration.scope).href===url.href);if(!allowed)return;e.respondWith((async()=>{const cache=await caches.open(CACHE_NAME),cached=await cache.match(e.request);if(cached)return cached;try{const response=await fetch(e.request);if(response.ok)await cache.put(e.request,response.clone());return response;}catch{return new Response('Recurso indisponível offline.',{status:503});}})());});

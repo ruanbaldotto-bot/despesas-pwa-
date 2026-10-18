@@ -1,0 +1,24 @@
+# Como usar
+
+1. **Categorias e lançamentos:** preserve seus cadastros existentes. Novos valores aceitam decimal com ponto no campo numérico; demais campos monetários aceitam 1234.56 ou 1.234,56. A interface exibe reais, cálculos usam centavos.
+2. **Cartões:** selecione Santander, Porto Bank, Mercado Pago ou Nubank, informe nome, quatro dígitos, fechamento e vencimento. Limite é informativo e opcional. Editar mantém o ID; arquivar preserva histórico. Dias maiores que o último dia de um mês são apresentados como dia cadastrado; ainda não se calculam feriados/dia útil bancário nem mudança automática de competência por fechamento.
+3. **Importação:** selecione cartão, competência e PDF/CSV. PDF precisa ter texto e datas com ano. Revise o texto extraído; corrija linhas e reprocessse. Remova apenas linhas não pertencentes à importação após conferência. Informe o total líquido efetivamente representado (compras + encargos − estornos − pagamentos), que pode diferir do boleto com saldo anterior. Totais com rótulo explícito, como “Total da fatura”, podem preencher o campo; confira sempre, pois o boleto pode incluir saldos não representados. Marque conferência e confirme. Nenhuma linha é salva antes disso. Selecione a categoria de cada compra na revisão, se desejar.
+4. **Projeção:** escolha mês inicial, cartão, pessoa e horizonte 3/6/12/24. Abra barras mensais para os itens. Confirmado significa registrado, não pago. Estimado repete parcelas remanescentes e recorrências marcadas manualmente. A redução compara os totais dos dois primeiros meses. Limite e fechamento não alteram essa projeção. Pagamentos ao banco não viram despesa adicional.
+5. **Família:** o mês segue o filtro em Projeção. Selecione compras e distribua por valor (por compra) ou percentual com duas casas; resíduos são distribuídos pelo maior resto. Para atribuir individualmente, selecione uma compra e 100% da pessoa. Estornos aceitam percentuais; valores digitados representam magnitudes. Sem atribuição, a compra não aparece em demonstrativos de ninguém. Associação entre meses exige mostrar parcelas de outros meses, selecionar as compras do mesmo parcelamento e confirmar um grupo válido. Depois de agrupar, salve a divisão com propagação. Não existe associação automática por semelhança.
+6. **Recebimentos:** escolha pessoa, consulte demonstrativo e registre valor positivo total ou parcial. O saldo pode ficar negativo (crédito); histórico não é apagado. Pagamento ao banco tem cartão e histórico próprios, sem reduzir o saldo do familiar. Nesta versão não há estorno de recebimento digitado por engano nem conciliação automática entre pagamentos importados e os registrados manualmente; evite registrar duas vezes o mesmo pagamento. O app não realiza transferências bancárias.
+7. **Compartilhamento:** revise o demonstrativo da pessoa. Compartilhar texto pede confirmação e abre o sistema, onde você escolhe WhatsApp/destinatário. Sem Web Share, copie o texto exibido. Imprimir permite PDF pelo sistema; não há geração de arquivo PDF anexável direta nem envio automático.
+8. **Proteção:** exporte backups regularmente; guarde senha fora do app. Restaurar pede confirmação e não sobrescreve IDs conflitantes. Use contexto vazio para recuperação integral; não há mesclagem inteligente entre bases de aparelhos. A trava de tela não criptografa o IndexedDB. Registros de pessoas não têm edição/arquivamento nesta versão.
+
+CSV sintético comum (Santander/Porto Bank/Mercado Pago):
+
+```csv
+data;descricao;valor
+2026-10-01;LOJA SINTETICA 2/4;100,01
+2026-10-02;Estorno sintetico;-10,00
+```
+
+Total líquido: 90,01. Nubank também aceita `date,title,amount`, com valor decimal com ponto. Cabeçalhos suportados são explícitos em Core.gs; formatos não reconhecidos falham e precisam ser adaptados. Não existe homologação dos exports atuais dos quatro bancos.
+
+Compras do mesmo dia, cartão, competência, descrição, valor e parcela são consideradas duplicidade possível, inclusive em outro arquivo. A mesma fatura por hash é bloqueada. Alterar artificialmente os dados para contornar a proteção prejudica conciliação.
+
+O botão Apagar original permanece para lançamentos e categorias. Excluir compra importada altera o relatório posterior, mas a fatura mantém o total original e o bloqueio por hash; faça backup antes e registre diferenças. Não existe trilha de estorno para essa exclusão legada. Referências de categorias excluídas aparecem como sem categoria.

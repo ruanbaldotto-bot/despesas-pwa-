@@ -1,7 +1,7 @@
 {
-  "name": "Despesas",
+  "name": "Despesas — Fatura inteligente",
   "short_name": "Despesas",
-  "description": "Controle de despesas • Offline • Cartões com importação de fatura (PDF – beta)",
+  "description": "Controle local de despesas, cartões e divisão familiar; backup criptografado.",
   "start_url": ".",
   "display": "standalone",
   "background_color": "#0b1220",
@@ -23,5 +23,7 @@
       "type": "image/png",
       "purpose": "any"
     }
-  ]
+  ],
+  "scope": "./",
+  "lang": "pt-BR"
 }

@@ -1,0 +1,1 @@
+{"name":"despesas-fatura-inteligente","version":"1.1.0","private":true,"scripts":{"test":"node --test tests/*.test.cjs","sync":"node tools/sync-core.cjs","demo":"node tools/build-demo.cjs","start":"node tools/preview.cjs"},"dependencies":{"pdfjs-dist":"6.4.299"},"devDependencies":{"fake-indexeddb":"6.2.6","jsdom":"30.1.3"}}
