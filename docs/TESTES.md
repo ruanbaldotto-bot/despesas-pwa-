@@ -1,3 +1,9 @@
+# Rodada Jabu — resultado atual
+
+**77/77 testes aprovados**, zero falhas. Runner Node equivalente ao script npm test; npm indisponível. Log: [test-output-jabu.txt](test-output-jabu.txt). Relatório, falhas corrigidas e limites: [JABU_HOMOLOGACAO.md](JABU_HOMOLOGACAO.md). Capturas reais do navegador integrado com dados sintéticos e verificação geométrica em 320 px estão em evidencias/. Safari físico permanece pendente. Os resultados abaixo são históricos da rodada anterior.
+
+---
+
 # Testes executados — 18/10/2026
 
 ## Resultado

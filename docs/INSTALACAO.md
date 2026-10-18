@@ -1,3 +1,11 @@
+# Jabu — prévia e instalação
+
+Manifest Jabu, ícone Apple 180px e maskable. Prévia local: node tools/preview.cjs. Demo em /demo/index.html tem banco e cache separados. node tools/build-demo.cjs gera 12 documentos sintéticos para seis instituições.
+
+Safari físico requer origem HTTPS autorizada e homologação manual. Loopback deste computador não é hospedagem acessível no iPhone. Nenhum deploy foi realizado. Roteiro em JABU_HOMOLOGACAO.md.
+
+---
+
 # Instalação e teste no iPhone
 
 Nenhum deploy foi realizado. Para instalar no telefone é necessário um endereço HTTPS autorizado que sirva os arquivos do PWA; abrir index.html como arquivo não fornece os recursos necessários. A prévia local de desenvolvimento não é acessível ao iPhone por 127.0.0.1.

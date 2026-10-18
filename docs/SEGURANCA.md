@@ -1,3 +1,13 @@
+# Avaliação Jabu
+
+Senha de PDF temporária: retirada imediatamente do campo, usada pelo PDF.js na memória, sem IndexedDB/backup/log. Worker encerrado também nas falhas. Não há garantia de apagar todas as cópias internas da memória JavaScript. Testes geram senhas aleatórias em execução.
+
+IndexedDB fica em claro. A trava oculta a interface e bloqueia interação casual; não impede inspeção do perfil, scripts na mesma origem ou aparelho comprometido. Backup AES-GCM protege somente o arquivo exportado; testes verificam senha errada, adulteração e conflitos sem sobrescrita. Senha perdida não é recuperável. Navegadores podem remover dados locais: guardar backups externos. Sem promessa de Face ID, cofre do sistema ou isolamento multiusuário. Cartão compartilhado é classificação, não autorização.
+
+Não há envio de PDFs nem fontes remotas. sharp gera imagens localmente e é dependência de desenvolvimento. Credencial oficial Git fica no processo CLI para destino fixo GitHub, sem impressão. Safari físico e auditoria independente permanecem pendentes.
+
+---
+
 # Segurança e privacidade
 
 ## Controles implementados

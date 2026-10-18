@@ -1,3 +1,9 @@
+# Evolução Jabu
+
+Core.gs segue fonte única, sincronizada para CoreClient.html/core.js. jabu.js apresenta as novas telas sobre os stores existentes; regras financeiras permanecem no Core. IndexedDB v5 preservado: card.shared é metadado opcional de organização; invoice.metadata guarda vencimento e resumo futuro validado. Sem migração destrutiva ou tabela separada de estado. design-tokens.css centraliza identidade. PDF.js e recursos são locais. tools/github-pr.cjs é ferramenta CLI fora da aplicação/cache, usando o protocolo oficial do Git Credential Manager sem credenciais no frontend.
+
+---
+
 # Decisão de arquitetura — 18/10/2026
 
 Mantido o PWA HTML/CSS/JavaScript original. As abas, categorias, orçamentos, lançamentos em dinheiro, resumos, exportação, IndexedDB e identidade visual continuam como base. Não foi introduzido backend nem serviço contratado. A pasta superior Apps Script/Sheets não integra este PWA e não foi modificada.

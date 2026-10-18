@@ -1,11 +1,14 @@
-# Despesas — evolução incremental para fatura inteligente
+# Jabu — Suas finanças com mais raízes
 
-PWA local baseado no protótipo existente, preservando IndexedDB, categorias, despesas, resumos e visual. Desenvolvimento na branch feature/fatura-inteligente; não houve deploy nem alteração da branch principal.
+PWA financeiro local, evolução do protótipo na feature/fatura-inteligente. Identidade própria, SVGs e ícones locais; dashboard, cartões pessoais/compartilhados, importação revisada, projeções e divisão familiar.
 
-Foram acrescentados cartões com edição/arquivamento e quatro bancos, revisão local de PDF/CSV com conciliação e deduplicação atômica, projeções rastreáveis, divisão familiar, pagamentos e demonstrativos individuais, backup criptografado e trava de tela opcional.
+Seis instituições: Santander, Porto Bank, Mercado Pago, Nubank, Itaú e Bradesco/Bradescard. PDF protegido com senha temporária. Validação exclusivamente sintética, sem PDFs reais; revisão humana obrigatória. IndexedDB em claro; somente backup exportado criptografado, com trava visual opcional.
 
-Consulte [auditoria](docs/AUDITORIA.md), [arquitetura](docs/ARQUITETURA.md), [instalação](docs/INSTALACAO.md), [uso e limitações](docs/USO.md), [segurança](docs/SEGURANCA.md) e [testes](docs/TESTES.md).
+**77 testes aprovados**. Navegador integrado verificado a 320/390px. Safari físico, instalação, offline completo e compartilhamento nativo pendentes. Sem deploy nem alteração da main.
 
-Leitura de layouts bancários é conservadora e requer revisão humana. Dados locais não são criptografados; somente o backup é. Offline, aparência, compartilhamento e instalação em iPhone real ainda precisam de homologação. Nenhum dado financeiro real foi acrescentado aos arquivos.
+- [Relatório e roteiro iPhone](docs/JABU_HOMOLOGACAO.md)
+- [Design](docs/JABU_DESIGN_SYSTEM.md), [arquitetura](docs/ARQUITETURA.md), [segurança](docs/SEGURANCA.md)
+- [Uso](docs/USO.md), [importação](docs/IMPORTACAO.md), [instalação](docs/INSTALACAO.md), [testes](docs/TESTES.md)
+- [PR draft](https://github.com/ruanbaldotto-bot/despesas-pwa-/pull/1), [publicação](docs/PUBLICACAO_GITHUB.md)
 
-Rodada adicional: 63 testes aprovados; correções de projeção, propagação, backup, trava e compartilhamento. Veja [relatório atual](docs/HOMOLOGACAO_2.md), [resolução de acesso GitHub](docs/PUBLICACAO_GITHUB.md) e [roteiro Safari/iPhone](docs/HOMOLOGACAO_IPHONE.md).
+Desenvolvimento: node tools/sync-core.cjs; node tools/vendor.cjs; node tools/build-demo.cjs; node --test tests/*.test.cjs (runner do script npm test). Prévia: node tools/preview.cjs. Não usar dados reais na demo/Git.

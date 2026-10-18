@@ -1,0 +1,5 @@
+# Importação no Jabu
+
+Seis instituições: Santander, Porto Bank, Mercado Pago, Nubank, Itaú e Bradesco/Bradescard. Os dois novos bancos possuem adaptadores PDF separados e aliases CSV próprios. Detecção conservadora por cabeçalho; não usa nomes de estabelecimentos. Datas sem ano exigem correção, sem inferência. Bradesco aceita parcelas entre parênteses e créditos com C ou sinal final. Ofertas de financiamento não são compras; resumos futuros são metadados informativos e não duplicam projeções. Totais conflitantes impedem conciliação automática.
+
+PDF protegido: senha opcional somente na leitura atual, campo limpo antes de processamento assíncrono, sem persistência/backup/log. JavaScript não garante apagamento seguro de memória. PDF digitalizado sem texto não tem OCR. Conferir banco, competência, linhas, sinais e total antes de confirmar; trocar arquivo/cartão/competência invalida a revisão. Os layouts foram testados apenas com documentos sintéticos; não houve PDF real autorizado. Veja JABU_HOMOLOGACAO.md.

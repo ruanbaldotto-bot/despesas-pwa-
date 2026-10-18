@@ -1,0 +1,36 @@
+{
+  "environment": "Navegador integrado; não Safari/iPhone físico",
+  "synthetic": true,
+  "measurements": [
+    {
+      "screen": "inicio",
+      "content": 305,
+      "overflow": false,
+      "viewport": 320
+    },
+    {
+      "screen": "cartoes",
+      "content": 305,
+      "overflow": false,
+      "viewport": 320
+    },
+    {
+      "screen": "familia",
+      "content": 305,
+      "overflow": false,
+      "viewport": 320
+    },
+    {
+      "screen": "projecao",
+      "content": 305,
+      "overflow": false,
+      "viewport": 320
+    },
+    {
+      "screen": "mais",
+      "content": 305,
+      "overflow": false,
+      "viewport": 320
+    }
+  ]
+}

@@ -1,3 +1,11 @@
+# Usar o Jabu
+
+Início apresenta saldo líquido importado e previsões por competência. Despesas registradas aparecem separadamente: pagamentos alteram o saldo bancário sem virar novas despesas. Cartões oferece filtros pessoal/compartilhado, edição, arquivo e detalhe. Importar fica no atalho do Início: escolha cartão, competência e arquivo; revise linhas e total antes de salvar. Senha de PDF vale somente para a leitura atual.
+
+Projeções permite 3/6/12/24 meses; toque numa barra para consultar instituição e composição registrada/estimada. Família preserva atribuições, recebimentos parciais e demonstrativos individuais. Mais reúne funções existentes, backup e trava. Nada é enviado automaticamente. Comece com arquivos de demo/faturas-sinteticas, nunca documentos reais na demo.
+
+---
+
 # Como usar
 
 1. **Categorias e lançamentos:** preserve seus cadastros existentes. Novos valores aceitam decimal com ponto no campo numérico; demais campos monetários aceitam 1234.56 ou 1.234,56. A interface exibe reais, cálculos usam centavos.

@@ -9,3 +9,5 @@ Símbolo: tronco fino, poucos galhos e folhas, três frutos e círculo discreto.
 Componentes claros em areia, cabeçalhos mata, botões folhas, foco azul-mar, estados vazios, campos de 46px, alertas sem dependência exclusiva de cor, contraste de texto escuro nas superfícies claras. Formulários têm tipografia de 16px; navegação e conteúdo respeitam safe areas. Elementos dinâmicos monetários usam números tabulares. Movimento respeita prefers-reduced-motion.
 
 A revisão visual em Safari/iPhone físico permanece pendente. Contraste por tokens e verificações estruturais não substituem validação renderizada e VoiceOver.
+
+Telas implementadas: dashboard por competência, cartões pessoais/compartilhados, importação revisada, gráficos clicáveis, família e Mais. Revisão real em navegador integrado a 320/390px; capturas sintéticas em evidencias/. Safari físico/VoiceOver permanecem pendentes.
