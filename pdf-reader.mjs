@@ -31,52 +31,71 @@ export function textRows(items) {
 export function itauTextRows(items) {
   const norm=s=>s.normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim().toLowerCase();
   const dateStart=/^(?:\d{2}\/\d{2}(?:\/\d{4})?|\d{4}-\d{2}-\d{2})\b/;
+  const dateOnly=/^(?:\d{2}\/\d{2}(?:\/\d{4})?|\d{4}-\d{2}-\d{2})$/;
   const moneyEnd=/(?:R\$\s*)?-?[\d.]+,\d{2}\s*[DC-]?\s*$/i;
   const moneyOnly=/^(?:R\$\s*)?-?[\d.]+,\d{2}\s*[DC-]?\s*$/i;
-  const heading=/^(?:lancamentos(?:\b|:)|compras e saques|pagamentos e creditos|transacoes do cartao|resumo da fatura|opcoes de parcelamento|parcelamento da fatura|parcelas futuras|compras parceladas.*proximas)/;
-  const total=/^(?:total (?:desta |da )?fatura|valor total (?:desta |da )?fatura|total a pagar)\s*(?:\(r\$\))?\s*[:=]?\s*$/;
-  const rows=[];
-  for(const item of items.filter(i=>typeof i.str==='string'&&i.str.trim()).slice().sort((a,b)=>b.transform[5]-a.transform[5]||a.transform[4]-b.transform[4])){
-    const y=item.transform[5],last=rows.at(-1);if(last&&Math.abs(last.y-y)<=2)last.items.push(item);else rows.push({y,items:[item]});
+  const heading=/^(?:lancamentos(?:\b|:)|compras e saques|pagamentos (?:e creditos|efetuados|anteriores)|transacoes do cartao|resumo da fatura|opcoes de parcelamento|parcelamento da fatura|parcelas futuras|compras parceladas.*proximas)/;
+  const total=/^(?:total (?:desta |da )?fatura|valor total (?:desta |da )?fatura|total a pagar|total (?:dos |de )?lancamentos atuais)\s*(?:\(r\$\))?\s*[:=]?\s*$/;
+  const info=/^(?:total|limite|saldo|vencimento|fechamento|data|descricao|valor|encargos|juros|taxa|cet|iof|sac|central|ouvidoria|cnpj|cpf|pagina|resumo|proxima|demais)\b/;
+  const source=items.filter(i=>typeof i.str==='string'&&i.str.trim()&&Array.isArray(i.transform));
+  const x=i=>i.transform[4],y=i=>i.transform[5],join=cells=>cells.map(i=>i.str).join(' ');
+  const bins=new Map();for(const item of source){const key=Math.floor(y(item)/3);if(!bins.has(key))bins.set(key,[]);bins.get(key).push(item);}
+  const nearbyCache=new Map(),nearby=item=>{const key=y(item);if(!nearbyCache.has(key)){const bin=Math.floor(key/3);nearbyCache.set(key,[-1,0,1].flatMap(n=>bins.get(bin+n)||[]).filter(i=>Math.abs(y(i)-key)<=2).sort((a,b)=>x(a)-x(b)));}return nearbyCache.get(key);};
+  const anchors=[];
+  for(const item of source){
+    const same=nearby(item),after=same.filter(i=>x(i)>x(item)&&x(i)-x(item)<300);
+    if(norm(item.str)==='data'&&after.some(i=>/^(?:descricao|estabelecimento|lancamento|historico)\b/.test(norm(i.str)))&&after.some(i=>/^(?:valor|r\$)/.test(norm(i.str))))anchors.push({x:x(item),header:true});
+    if(dateOnly.test(item.str.trim())){const before=same.filter(i=>x(i)<x(item));if(!before.length||moneyEnd.test(join(before)))anchors.push({x:x(item),header:false});}
   }
-  const headers=[];
-  for(const row of rows){row.items.sort((a,b)=>a.transform[4]-b.transform[4]);
-    row.items.forEach((item,index)=>{if(norm(item.str)==='data'&&row.items.slice(index+1).some(x=>/^(?:descricao|estabelecimento|lancamento|historico)\b/.test(norm(x.str)))&&row.items.slice(index+1).some(x=>/^(?:valor|r\$)\b/.test(norm(x.str))))headers.push({x:item.transform[4],y:row.y});});
+  const clusters=[];
+  for(const a of anchors.sort((a,b)=>a.x-b.x)){let c=clusters.find(c=>Math.abs(c.x-a.x)<=8);if(!c){c={x:a.x,count:0,header:false};clusters.push(c);}c.count++;c.header||=a.header;}
+  const reliable=clusters.filter(c=>c.header||c.count>=3).map(c=>c.x),columns=[];
+  for(const a of reliable)if(!columns.length||a-columns.at(-1)>=120)columns.push(a);
+  // Partition original elements into independent columns BEFORE Y ordering and row grouping.
+  const blocks=(columns.length>1?columns:[-Infinity]).map(()=>[]),assigned=new Map();
+  const columnOf=item=>{let c=0;for(let n=1;n<columns.length;n++)if(x(item)>=columns[n]-3)c=n;return c;};
+  for(const item of source){
+    if(!/^(?:total|valor total)\b/.test(norm(item.str)))continue;
+    const same=nearby(item),text=join(same);if(same[0]!==item||!(text.match(/[\d.]+,\d{2}\b/g)||[]).length)continue;
+    // A unique explicit total is a single summary block even when its value is right-aligned.
+    if(/^(?:total (?:desta |da )?fatura|valor total (?:desta |da )?fatura|total a pagar|total (?:dos |de )?lancamentos atuais)\b/.test(norm(text))&&(text.match(/[\d.]+,\d{2}\b/g)||[]).length===1)for(const cell of same)assigned.set(cell,columnOf(item));
   }
-  const starts=[...new Set(headers.map(h=>Math.round(h.x/5)*5))].sort((a,b)=>a-b);
-  // Only explicit multi-table headers enable column-major order. Otherwise use visual rows.
-  const columns=starts.filter((x,i)=>!i||x-starts[i-1]>=120),blocks=columns.length>1?columns.map(()=>[]):[[]];
-  for(const row of rows){
-    let chunks=[row.items];
-    const fullRow=row.items.map(i=>i.str).join(' '),singleTotal=/^(?:total (?:desta |da )?fatura|valor total (?:desta |da )?fatura|total a pagar)\b/.test(norm(fullRow))&&(fullRow.match(/[\d.]+,\d{2}\b/g)||[]).length===1;
-    if(blocks.length>1&&singleTotal){chunks=blocks.map(()=>[]);let column=0;for(let c=1;c<columns.length;c++)if(row.items[0].transform[4]>=columns[c]-3)column=c;chunks[column]=row.items;}
-    else if(blocks.length>1){chunks=blocks.map(()=>[]);for(const item of row.items){let index=0;for(let c=1;c<columns.length;c++)if(item.transform[4]>=columns[c]-3)index=c;chunks[index].push(item);}}
-    chunks.forEach((chunk,column)=>{
-      let current=[];
-      const flush=()=>{if(current.length)blocks[column].push({y:row.y,items:current});current=[];};
-      for(const item of chunk){const prefix=current.map(i=>i.str).join(' '),last=current.at(-1),gap=last?item.transform[4]-(last.transform[4]+(last.width||0)):0;
-        // A parcel suffix has no preceding completed amount and stays with its purchase.
+  for(const item of source)blocks[assigned.has(item)?assigned.get(item):columnOf(item)].push(item);
+  const output=[];
+  for(const elements of blocks){
+    const rows=[];
+    for(const item of elements.slice().sort((a,b)=>y(b)-y(a)||x(a)-x(b))){const last=rows.at(-1);if(last&&Math.abs(last.y-y(item))<=2)last.items.push(item);else rows.push({y:y(item),items:[item]});}
+    const chunks=[];
+    for(const row of rows){let current=[];const flush=()=>{if(current.length)chunks.push({y:row.y,items:current});current=[];};
+      for(const item of row.items.sort((a,b)=>x(a)-x(b))){const prefix=join(current),last=current.at(-1),gap=last?x(item)-(x(last)+(last.width||0)):0;
         if(current.length&&((moneyEnd.test(prefix)&&dateStart.test(item.str.trim()))||(gap>=Math.max(35,Math.abs(item.transform[0]||1)*3)&&(heading.test(norm(item.str))||heading.test(norm(prefix))))))flush();
         current.push(item);
-      }
-      flush();
-    });
-  }
-  const output=[];
-  for(const block of blocks){
-    for(let n=0;n<block.length;n++){
-      const row=block[n],cells=row.items;let handled=false;
-      // Separate an explicit total block from trailing unrelated text only when one value is unique.
-      for(let end=0;end<cells.length;end++){
-        const label=cells.slice(0,end+1).map(i=>i.str).join(' ');
-        if(!total.test(norm(label)))continue;
-        const tail=cells.slice(end+1),values=tail.filter(i=>moneyOnly.test(i.str.trim()));
-        const valueIndex=tail.indexOf(values[0]),currency=valueIndex===1&&/^r\$/.test(norm(tail[0].str));
-        if(values.length===1&&(valueIndex===0||currency)&&!tail.slice(valueIndex+1).some(i=>/[\d.]+,\d{2}/.test(i.str))){
-          output.push(label+' '+tail.slice(0,valueIndex+1).map(i=>i.str).join(' '));if(tail.length>valueIndex+1)output.push(tail.slice(valueIndex+1).map(i=>i.str).join(' '));handled=true;break;
+      }flush();
+    }
+    for(let n=0;n<chunks.length;n++){
+      const row=chunks[n],cells=row.items,text=join(cells);let line=text,used=0;
+      if(dateStart.test(text)){
+        const height=Math.max(8,Math.abs(cells[0].transform[0]||10)),descriptionX=dateOnly.test(cells[0].str.trim())&&cells[1]?x(cells[1]):x(cells[0])+Math.min(40,height*3);let combined=text,lastY=row.y;
+        for(let k=n+1;k<chunks.length&&k<=n+4;k++){
+          const next=chunks[k],extra=join(next.items),gap=lastY-next.y;
+          if(gap<=2||gap>height*2.2||dateStart.test(extra)||heading.test(norm(extra))||info.test(norm(extra)))break;
+          if(moneyOnly.test(extra)&&!moneyEnd.test(combined)&&x(next.items[0])>descriptionX){combined+=' '+extra;used++;lastY=next.y;break;}
+          if(!/^[A-Za-zÀ-ÿ]/.test(extra)||/[\d.]+,\d{2}/.test(extra)||x(next.items[0])<descriptionX-5)break;
+          const match=combined.match(/^(.*?)(\s+(?:R\$\s*)?-?[\d.]+,\d{2}\s*[DC-]?)$/i);
+          if(match){const suffix=match[1].match(/\s+(\(?\d{1,3}\s*\/\s*\d{1,3}\)?)$/);combined=(suffix?match[1].slice(0,suffix.index):match[1])+' '+extra+(suffix?' '+suffix[1]:'')+match[2];}
+          else combined+=' '+extra;
+          used++;lastY=next.y;
         }
+        line=combined;
       }
-      if(!handled)output.push(cells.map(i=>i.str).join(' '));
+      if(used){output.push(line);n+=used;continue;}
+      let handled=false;
+      for(let end=0;end<cells.length;end++){
+        const label=join(cells.slice(0,end+1));if(!total.test(norm(label)))continue;
+        const tail=cells.slice(end+1),values=tail.filter(i=>moneyOnly.test(i.str.trim())),valueIndex=tail.indexOf(values[0]),currency=valueIndex===1&&/^r\$$/.test(norm(tail[0].str));
+        if(values.length===1&&(valueIndex===0||currency)&&!tail.slice(valueIndex+1).some(i=>/[\d.]+,\d{2}/.test(i.str))){output.push(label+' '+join(tail.slice(0,valueIndex+1)));if(tail.length>valueIndex+1)output.push(join(tail.slice(valueIndex+1)));handled=true;break;}
+      }
+      if(!handled)output.push(line);
     }
   }
   return output;

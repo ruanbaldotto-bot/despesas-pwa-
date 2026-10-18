@@ -1,4 +1,4 @@
-param([Parameter(Mandatory=$true)][string]$Bank,[Parameter(Mandatory=$true)][string]$File,[switch]$ReviewPeriod)
+param([Parameter(Mandatory=$true)][string]$Bank,[Parameter(Mandatory=$true)][string]$File,[switch]$ReviewPeriod,[switch]$CompareReferences)
 $ErrorActionPreference='Stop'
 # Resolve code from this script's directory, independent of the shell working directory.
 $taskNode=(Get-Command node -CommandType Application -ErrorAction Stop).Source
@@ -20,6 +20,12 @@ try {
   $taskConfirmation=Read-Host 'Confirma que o período se aplica às datas originais dos lançamentos? Digite SIM'
   if($taskConfirmation -cne 'SIM'){throw 'Período não confirmado; auditoria cancelada.'}
   $taskInput.reviewPeriod=@{from=$taskFrom;to=$taskTo;confirmed=$true}
+ }
+ if($CompareReferences){
+  $taskInput.referenceTotals=@{}
+  foreach($taskPair in @(@('current','Total dos lançamentos atuais'),@('previousPayment','Pagamento efetuado anterior'),@('next','Próxima fatura parcelada'),@('remaining','Demais faturas parceladas'),@('future','Total futuro'))){
+   $taskInput.referenceTotals[$taskPair[0]]=Read-Host ($taskPair[1]+' (valor brasileiro, somente neste computador)')
+  }
  }
  $taskInput | ConvertTo-Json -Compress | & $taskNode $taskAuditor $Bank $File --private-input-stdin --expected-engine $taskEngine.codeHash
  if($LASTEXITCODE -ne 0){throw 'Auditoria não concluída. Nenhum conteúdo foi registrado.'}

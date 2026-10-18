@@ -95,3 +95,9 @@ Motor jabu-audit-4, SHA-256 de4534a439d6cab5cd149124236fdb21e7e854f18a8b7ab56b3c
 Motor jabu-audit-5, SHA-256 44252207aa18b1b718037fcc2f2eac758473f23c4d16e2c459b0b256dcceb9fa. Última evidência real ainda é do motor 4 (1 transação, 173 exceções, total ausente, zero compras parceladas e zero candidatas fora da revisão). Validação protegida do motor 5 solicitada; nenhuma conclusão financeira real antecipada.
 
 Pacote sintético privado validado, cache 074bc5a33b855aa5; anterior preservado, arquivos conferidos por TLS válido, loopback e Funnel desativado. Atualização efetiva e revisão por período no iPhone aguardam execução física.
+
+## Itaú — seções e descrições em duas colunas
+
+131 testes aprovados com Node (npm indisponível), preservando os 123 anteriores e acrescentando oito casos sintéticos. Separação de colunas antes da ordenação de linhas, descrições complementares e valores em linhas adicionais; rótulo do total atual; histórico de pagamentos separado; resumo/projeção futura em centavos sem duplicação; limites e ambiguidades em revisão; auditor protegido com comparação de referências sem emissão de valores. Wrapper PowerShell sem erros de sintaxe.
+
+Motor jabu-audit-6 / SHA-256 76fda97eca1ccfbf6fad8fb242c731f784620f3d759ee8fac96d9d031fb3c389. Nenhuma referência financeira real copiada para fixture, código ou relatório. Nova auditoria protegida solicitada; resultado real, conciliação e iPhone físico ainda pendentes. Pacote sintético privado validado (cache 33369deec4dece71), anterior preservado, TLS/arquivos/loopback verificados e Funnel desativado. Não equivale a homologação financeira, Safari físico ou Google.

@@ -102,22 +102,34 @@ function itauRow_(line,cycle,explicitSection){
  return row;
 }
 function itauTotal_(line){
- const n=normalize(line),label='(?:total (?:desta |da )?fatura|valor total (?:desta |da )?fatura|total a pagar)';
+ const n=normalize(line),label='(?:total (?:desta |da )?fatura|valor total (?:desta |da )?fatura|total a pagar|total (?:dos |de )?lancamentos atuais)';
  const m=n.match(new RegExp('^'+label+'\\s*(?:\\(r\\$\\))?\\s*[:=\\-]?\\s*(?:r\\$\\s*)?(-?[\\d.]+,\\d{2})\\s*$'));
  return {value:m?money(m[1]):null,label:new RegExp('^'+label+'\\s*(?:\\(r\\$\\))?\\s*[:=]?\\s*$').test(n)};
 }
 function readItau(text,options={}){
  const items=[],issues=[],totals=[],metadata={},lines=text.split(/\r?\n/).map(s=>s.replace(/\u00a0/g,' ').trim()),cycle=options.reviewPeriod?reviewPeriod_(options.reviewPeriod):itauCycle_(lines);let section='transactions',explicitSection=false;
  metadata.dateContext=cycle?(options.reviewPeriod?'período confirmado na revisão':'período explícito'):'ausente ou ambíguo';if(options.reviewPeriod)metadata.reviewPeriod={from:cycle.from,to:cycle.to};
- const consumed=new Set(),recognizedSources=new Set(),summarySources=new Set();
+ const consumed=new Set(),recognizedSources=new Set(),summarySources=new Set(),futureReferences={},futureLines=new Set(),previousPayments=[],reportedPreviousPayments=[],previousLines=new Set();let previousConflict=false;
  lines.forEach((line,i)=>{const n=normalize(line);if(!line||consumed.has(i))return;
   if(/^(?:opcoes de parcelamento|parcelamento da fatura|simulacao|oferta de parcelamento)\b/.test(n)){section='offer';explicitSection=false;issues.push('Linha '+(i+1)+': oferta de financiamento excluída das compras.');return;}
   if(/^(?:compras parceladas.*proximas|parcelas futuras|compromissos futuros)\b/.test(n)){section='future';explicitSection=false;return;}
+  if(/^(?:pagamentos efetuados|pagamentos anteriores)(?:\s*\(continuacao\))?$/.test(n)){section='previousPayments';explicitSection=false;return;}
   if(/^(?:lancamentos(?: atuais|: compras e saques|: produtos e servicos)?|compras e saques|pagamentos e creditos|transacoes do cartao)(?:\s*\(continuacao\))?$/.test(n)){section='transactions';explicitSection=true;return;}
   if(/^resumo da fatura$/.test(n)){section='summary';explicitSection=false;return;}
   try{
-   if(section!=='offer'&&section!=='future'){
-    const total=itauTotal_(line);if(total.value!=null){totals.push(total.value);summarySources.add(i);return;}
+   if(section==='future'){
+    const f=n.match(/^(proxima fatura(?: parcelada)?|demais (?:faturas|parcelas)(?: parceladas| futuras)?|total futuro|total (?:para |das )?proximas faturas)\s*[:=]?\s*(?:r\$\s*)?([\d.]+,\d{2})$/);
+    if(f){const key=/^proxima/.test(f[1])?'nextCents':/^demais/.test(f[1])?'remainingCents':'totalCents';(futureReferences[key]||=[]).push(money(f[2]));futureLines.add(i);summarySources.add(i);return;}
+   }
+   if(section==='previousPayments'){
+    const pay=line.match(/^\s*(?:\d{2}\/\d{2}(?:\/\d{4})?|\d{4}-\d{2}-\d{2})\s+(?:PAGAMENTO|PAGTO)\b.*?\s+(?:R\$\s*)?(-?[\d.]+,\d{2})\s*[DC-]?\s*$/i);
+    if(pay&&!ambiguousPDFRow_(line)){previousPayments.push(Math.abs(money(pay[1])));summarySources.add(i);previousLines.add(i);return;}
+    const sum=n.match(/^total (?:de )?pagamentos(?: efetuados| anteriores)?\s*:?\s*(?:r\$\s*)?(-?[\d.]+,\d{2})$/);
+    if(sum){reportedPreviousPayments.push(Math.abs(money(sum[1])));summarySources.add(i);previousLines.add(i);return;}
+   }
+   if(section!=='offer'&&section!=='future'&&section!=='previousPayments'){
+
+    const total=itauTotal_(line);if((total.label||total.value!=null)&&/^total (?:dos |de )?lancamentos atuais/.test(n))metadata.totalScope='currentCharges';if(total.value!=null){totals.push(total.value);summarySources.add(i);if(/^total (?:dos |de )?lancamentos atuais/.test(n))metadata.totalScope='currentCharges';return;}
     if(total.label){const next=(lines[i+1]||'').match(/^(?:R\$\s*)?(-?[\d.]+,\d{2})$/i);if(next){totals.push(money(next[1]));consumed.add(i+1);summarySources.add(i);summarySources.add(i+1);}else issues.push('Linha '+(i+1)+': referência ao total sem valor adjacente; conferir.');return;}
    }
    const due=n.match(/^(?:data de )?vencimento\s*:?\s*(\d{2}\/\d{2}\/\d{4})$/);if(due){metadata.dueDate=parseDate(due[1]);summarySources.add(i);return;}
@@ -133,7 +145,17 @@ function readItau(text,options={}){
    }
    const row=itauRow_(combined,cycle,explicitSection);if(row){items.push(row);recognizedSources.add(i);used.forEach(n=>{consumed.add(n);recognizedSources.add(n);});}else issues.push('Linha '+(i+1)+': formato Itaú não reconhecido; confira o documento.');
   }catch(e){issues.push('Linha '+(i+1)+': '+e.message);}
- });return {...bankResult(items,issues,totals,metadata,'Itaú'),sourceAccounting:{recognized:[...recognizedSources],summary:[...summarySources]}};
+ });
+ if(previousPayments.length||reportedPreviousPayments.length){const reported=[...new Set(reportedPreviousPayments)],calculated=previousPayments.reduce((s,v)=>integer(s+v),0);previousConflict=reported.length>1||previousPayments.length&&reported.length===1&&reported[0]!==calculated;metadata.previousPaymentsCents=previousPayments.length?calculated:reported.length===1?reported[0]:0;metadata.previousPaymentsCheck=previousConflict?'divergente':'seção separada';if(previousConflict){for(const i of previousLines)summarySources.delete(i);issues.push('Pagamentos anteriores divergentes; confira as referências sem alterar compras atuais.');}else issues.push('Pagamentos anteriores conferidos como histórico; não reduzem os lançamentos atuais.');}
+ if(Object.keys(futureReferences).length){
+  metadata.future={};let conflicting=false;
+  for(const [key,values]of Object.entries(futureReferences)){const unique=[...new Set(values)];if(unique.length===1)metadata.future[key]=unique[0];else conflicting=true;}
+  const f=metadata.future;if(f.nextCents!=null&&f.remainingCents!=null&&f.totalCents!=null&&integer(f.nextCents+f.remainingCents)!==f.totalCents)conflicting=true;
+  metadata.futureCheck=conflicting?'divergente':Object.keys(f).length===3?'coerente':'incompleto';
+  if(conflicting){for(const i of futureLines)summarySources.delete(i);issues.push('Resumo futuro divergente; nenhuma parcela foi criada a partir do resumo.');}
+  else issues.push('Resumo de próximas faturas usado somente para conferência; não cria compras ou parcelas.');
+ }
+ return {...bankResult(items,issues,totals,metadata,'Itaú'),sourceAccounting:{recognized:[...recognizedSources],summary:[...summarySources]}};
 }
 function readBradesco(text){
  const items=[],issues=[],totals=[],metadata={future:{}};let section='transactions';

@@ -45,7 +45,7 @@ function validateSnapshot(data){
     if(e.last4!=null&&!/^\d{4}$/.test(e.last4))invalid();
    }
    if(n==='invoices'){
-    if(e.metadata!=null){if(typeof e.metadata!=='object'||Array.isArray(e.metadata))invalid();if(e.metadata.dueDate!=null)Fatura.date(e.metadata.dueDate);if(e.metadata.reviewPeriod!=null){const p=e.metadata.reviewPeriod;if(typeof p!=='object'||Array.isArray(p))invalid();Fatura.date(p.from);Fatura.date(p.to);const days=(Date.parse(p.to)-Date.parse(p.from))/86400000;if(days<0||days>366)invalid();}if(e.metadata.future!=null){if(typeof e.metadata.future!=='object'||Array.isArray(e.metadata.future))invalid();for(const value of Object.values(e.metadata.future))if(!integer(value)||value<0)invalid();}}
+    if(e.metadata!=null){if(typeof e.metadata!=='object'||Array.isArray(e.metadata))invalid();if(e.metadata.dueDate!=null)Fatura.date(e.metadata.dueDate);if(e.metadata.previousPaymentsCents!=null&&(!integer(e.metadata.previousPaymentsCents)||e.metadata.previousPaymentsCents<0))invalid();if(e.metadata.reviewPeriod!=null){const p=e.metadata.reviewPeriod;if(typeof p!=='object'||Array.isArray(p))invalid();Fatura.date(p.from);Fatura.date(p.to);const days=(Date.parse(p.to)-Date.parse(p.from))/86400000;if(days<0||days>366)invalid();}if(e.metadata.future!=null){if(typeof e.metadata.future!=='object'||Array.isArray(e.metadata.future))invalid();for(const value of Object.values(e.metadata.future))if(!integer(value)||value<0)invalid();}}
 
     if(!text(e.hash,true)||e.hash.length>256)invalid();
     if(e.yyyymm!=null)Fatura.month(e.yyyymm);if(e.totalCents!=null&&!integer(e.totalCents))invalid();
