@@ -29,3 +29,10 @@ Atualização privada concluída: iPhone online na mesma conta, Serve HTTPS 443 
 Reproduz TypeError de PDFPageProxy.getTextContent no PDF.js 6.4.299 sem ReadableStream asyncIterator. Extrai texto por getReader().read(), preservando limites/worker e sem alterar vendor ou adicionar polyfill global. Novo leitor local usa FileReader quando File.arrayBuffer não existe, decodifica CSV e reaproveita bytes no PDF. Sem conteúdo/senhas nos logs ou envio de arquivos.
 
 85 testes aprovados (80 anteriores + 5 regressões), incluindo PDF real/senha e CSV sem iterador/métodos modernos, revisão e conciliação. Pacote sintético privado regenerado preservando o anterior; cache novo confirmado após fechar/reabrir cliente. PDF e CSV separados verificados no navegador integrado por HTTPS. Funnel continua desativado, main preservada. A correção no iPhone aguarda nova execução física. Relatório: docs/CORRECAO_IMPORTACAO_IOS.md.
+
+
+## Diagnóstico local de leitores e revisão individual
+
+95 testes aprovados (85 anteriores preservados + 10 regressões sintéticas). Extração PDF agrupa células por coordenadas e recusa possíveis transações de colunas sobrepostas. Texto informativo agrupado; exceções financeiras exigem correção individual ou exclusão justificada, bloqueando salvamento mesmo com total coincidente. Correção monetária CSV para moeda brasileira/negativos/aspas/separador explícito, sem aceitar valores ambíguos. Ajustes de status bar/safe area para nova validação iOS.
+
+Quatro PDFs autorizados auditados somente em processos locais, sem texto/valores/senhas no modelo, relatórios ou Git. Nenhum deles conciliou automaticamente: leitores reais permanecem pendentes. Itaú aguarda senha em prompt local; Nubank/CSVs não disponíveis. Não declarar homologação completa. Matriz agregada em docs/HOMOLOGACAO_LEITORES_REAIS.md. Ambiente atualizado contém exclusivamente dados sintéticos, sem alteração de main ou deploy público.

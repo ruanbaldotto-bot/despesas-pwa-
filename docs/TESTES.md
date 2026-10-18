@@ -1,3 +1,9 @@
+# Diagnóstico local dos leitores — rodada atual
+
+95/95 testes aprovados. Quatro PDFs reais auditados estritamente localmente com saída agregada: nenhum foi conciliado/aprovado automaticamente. Itaú protegido e Nubank/CSVs ainda pendentes. Revisão individual, alertas agrupados, validação monetária e extração por coordenadas implementadas. [Matriz e limites](HOMOLOGACAO_LEITORES_REAIS.md).
+
+---
+
 # Correção de importação iOS — rodada atual
 
 85/85 testes aprovados, incluindo os 80 anteriores. Causa reproduzida na iteração assíncrona de ReadableStream dentro de getTextContent; correção local por getReader e fallback FileReader. Pacote privado/cache atualizados. Nova validação no iPhone ainda pendente. [Relatório e atualização](CORRECAO_IMPORTACAO_IOS.md).
