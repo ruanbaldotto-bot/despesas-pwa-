@@ -38,12 +38,15 @@ function validateSnapshot(data){
    }
    if(n==='categories'&&(!text(e.name,true)||!text(e.icon)||(e.budgetMonthly!=null&&(!Number.isFinite(e.budgetMonthly)||e.budgetMonthly<0))))invalid();
    if(n==='cards'){
+    if(e.shared!=null&&typeof e.shared!=='boolean')invalid();
     if(!text(e.name,true)||!text(e.bank)||(e.archived!=null&&typeof e.archived!=='boolean'))invalid();
     for(const key of ['closeDay','dueDay'])if(e[key]!=null&&(!integer(e[key])||e[key]<1||e[key]>31))invalid();
     if(e.limitCents!=null&&(!integer(e.limitCents)||e.limitCents<0))invalid();
     if(e.last4!=null&&!/^\d{4}$/.test(e.last4))invalid();
    }
    if(n==='invoices'){
+    if(e.metadata!=null){if(typeof e.metadata!=='object'||Array.isArray(e.metadata))invalid();if(e.metadata.dueDate!=null)Fatura.date(e.metadata.dueDate);if(e.metadata.future!=null){if(typeof e.metadata.future!=='object'||Array.isArray(e.metadata.future))invalid();for(const value of Object.values(e.metadata.future))if(!integer(value)||value<0)invalid();}}
+
     if(!text(e.hash,true)||e.hash.length>256)invalid();
     if(e.yyyymm!=null)Fatura.month(e.yyyymm);if(e.totalCents!=null&&!integer(e.totalCents))invalid();
    }

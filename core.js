@@ -47,13 +47,58 @@ const adapters={
  'Santander':{date:['data','data da compra'],desc:['descricao','estabelecimento'],value:['valor','valor (r$)']},
  'Porto Bank':{date:['data','data compra'],desc:['descricao','estabelecimento'],value:['valor','valor r$']},
  'Mercado Pago':{date:['data','date'],desc:['descricao','description'],value:['valor','amount']},
- 'Nubank':{date:['date','data'],desc:['title','descricao'],value:['amount','valor']}
+ 'Nubank':{date:['date','data'],desc:['title','descricao'],value:['amount','valor']},
+ 'Itaú':{date:['data','data da compra'],desc:['lancamento','descricao','historico'],value:['valor em r$','valor (r$)','valor'],readPDF:readItau},
+ 'Bradesco / Bradescard':{date:['data','data da compra'],desc:['estabelecimento','descricao','historico'],value:['valor r$','valor (r$)','valor'],readPDF:readBradesco}
 };
+function canonicalBank(bank){if(['Bradesco','Bradescard'].includes(bank))return 'Bradesco / Bradescard';if(bank==='Itau')return 'Itaú';return bank;}
+function detectBank(text){const found=new Set();for(const line of text.split(/\r?\n/).slice(0,20)){const s=normalize(line);if(/^(?:banco )?itau(?:\b|$)/.test(s))found.add('Itaú');if(/^(?:banco )?(?:bradesco|bradescard)(?:\b|$)/.test(s))found.add('Bradesco / Bradescard');for(const bank of ['Santander','Porto Bank','Mercado Pago','Nubank'])if(s.startsWith(normalize(bank)))found.add(bank);}return found.size===1?[...found][0]:null;}
+function datedBankRow(line){
+ const m=line.match(/^\s*(\d{4}-\d{2}-\d{2}|\d{2}\/\d{2}(?:\/\d{4})?)\s+(.+?)\s+(?:R\$\s*)?(-?[\d.]+,\d{2})\s*([DC-])?\s*$/i);
+ if(!m)return null;if(/^\d{2}\/\d{2}$/.test(m[1]))fail('Data sem ano: confira e complete a data no texto de revisão.');
+ let value=money(m[3]);if(m[4]&&/C|-/.test(m[4].toUpperCase()))value=-Math.abs(value);
+ return make(parseDate(m[1]),m[2].trim(),value);
+}
+function bankResult(items,issues,totals,metadata,bank){const unique=[...new Set(totals)];if(unique.length>1)issues.push('Totais declarados conflitantes; confira o total manualmente.');return {items,issues,reportedTotalCents:unique.length===1?unique[0]:null,metadata,bank};}
+function readItau(text){
+ const items=[],issues=[],totals=[],metadata={};let section='transactions';
+ text.split(/\r?\n/).forEach((raw,i)=>{const line=raw.replace(/\u00a0/g,' ').trim(),n=normalize(line);if(!line)return;
+  if(/^(?:opcoes de parcelamento|parcelamento da fatura|simulacao|oferta de parcelamento)/.test(n)){section='offer';issues.push(`Linha ${i+1}: oferta de financiamento excluída das compras.`);return;}
+  if(/^(?:compras parceladas.*proximas|parcelas futuras|compromissos futuros)/.test(n)){section='future';return;}
+  if(/^(?:lancamentos(?: atuais|: compras e saques)?|compras e saques|pagamentos e creditos|transacoes do cartao)$/.test(n)){section='transactions';return;}
+  if(section!=='transactions'){if(/^\d/.test(n))issues.push(`Linha ${i+1}: item em seção de oferta/futuro não importado.`);return;}
+  try{
+   const total=n.match(/^(?:total desta fatura|total da fatura|valor total desta fatura|total a pagar)\s*:?\s*(?:r\$\s*)?(-?[\d.]+,\d{2})$/);if(total){totals.push(money(total[1]));return;}
+   const due=n.match(/^vencimento\s*:?\s*(\d{2}\/\d{2}\/\d{4})$/);if(due){metadata.dueDate=parseDate(due[1]);return;}
+   if(/^(?:itau\b|data\s+(?:lancamento|descricao)|resumo da fatura$)/.test(n))return;
+   const row=datedBankRow(line);if(row)items.push(row);else issues.push(`Linha ${i+1}: formato Itaú não reconhecido; confira o documento.`);
+  }catch(e){issues.push(`Linha ${i+1}: ${e.message}`);}
+ });return bankResult(items,issues,totals,metadata,'Itaú');
+}
+function readBradesco(text){
+ const items=[],issues=[],totals=[],metadata={future:{}};let section='transactions';
+ text.split(/\r?\n/).forEach((raw,i)=>{const line=raw.replace(/\u00a0/g,' ').trim(),n=normalize(line);if(!line)return;
+  if(/^(?:oferta|opcoes de parcelamento|parcelamento da fatura|simulacao)/.test(n)){section='offer';issues.push(`Linha ${i+1}: oferta de parcelamento da fatura excluída.`);return;}
+  if(/^(?:resumo (?:das )?compras parceladas|compras parceladas futuras|compromissos futuros)$/.test(n)){section='future';return;}
+  if(/^(?:lancamentos|transacoes(?: nacionais| internacionais)?|despesas do cartao|pagamentos e creditos)$/.test(n)){section='transactions';return;}
+  try{
+   const summary=n.match(/^(proxima fatura parcelada|demais parcelas futuras|total futuro)\s*:?\s*(?:r\$\s*)?([\d.]+,\d{2})$/);
+   if(summary&&section!=='offer'){const keys={'proxima fatura parcelada':'nextCents','demais parcelas futuras':'remainingCents','total futuro':'totalCents'};metadata.future[keys[summary[1]]]=money(summary[2]);return;}
+   if(section!=='transactions'){if(/^\d/.test(n))issues.push(`Linha ${i+1}: valor em oferta/resumo não virou lançamento.`);return;}
+   const total=n.match(/^(?:total desta fatura|saldo da fatura|saldo desta fatura|total da fatura|valor desta fatura)\s*:?\s*(?:r\$\s*)?(-?[\d.]+,\d{2})$/);if(total){totals.push(money(total[1]));return;}
+   const due=n.match(/^vencimento\s*:?\s*(\d{2}\/\d{2}\/\d{4})$/);if(due){metadata.dueDate=parseDate(due[1]);return;}
+   if(/^(?:bradesco\b|bradescard\b|data\s+estabelecimento|resumo da fatura$)/.test(n))return;
+   const row=datedBankRow(line);if(row)items.push(row);else issues.push(`Linha ${i+1}: formato Bradesco/Bradescard não reconhecido; confira o documento.`);
+  }catch(e){issues.push(`Linha ${i+1}: ${e.message}`);}
+ });
+ const f=metadata.future;if(f.nextCents!=null&&f.remainingCents!=null&&f.totalCents!=null&&f.nextCents+f.remainingCents!==f.totalCents)issues.push('Resumo futuro divergente; não foi usado para criar parcelas.');
+ return bankResult(items,issues,totals,metadata,'Bradesco / Bradescard');
+}
 function parseDate(s){s=String(s).trim();if(/^\d{2}\/\d{2}\/\d{4}$/.test(s))s=s.split('/').reverse().join('-');return date(s);}
-function installment(desc){const m=desc.match(/(?:parcela\s*)?(\d{1,2})\s*(?:\/| de )\s*(\d{1,2})\s*$/i);if(!m)return {};const n=+m[1],t=+m[2];if(!n||n>t)fail('Parcelamento inválido.');return {installmentNumber:n,installmentsTotal:t};}
+function installment(desc){const m=desc.match(/(?:\(\s*)?(?:parcela\s*)?(\d{1,3})\s*(?:\/| de )\s*(\d{1,3})\s*\)?\s*$/i);if(!m)return {};const n=+m[1],t=+m[2];if(!n||n>t)fail('Parcelamento inválido.');const result={installmentNumber:n,installmentsTotal:t};validateInstallments(result);return result;}
 function extractTotal(text){const values=[];for(const line of text.split(/\r?\n/)){const m=normalize(line).match(/^(?:total da fatura|total a pagar|valor total da fatura|total liquido)\s*[:\-]?\s*(?:r\$\s*)?(-?[\d.]+,\d{2})$/);if(m)values.push(money(m[1]));}const unique=[...new Set(values)];return unique.length===1?unique[0]:null;}
 function parse(text,bank,format){
- const adapter=adapters[bank];if(!adapter)fail('Banco não suportado.');const items=[],issues=[];
+ bank=canonicalBank(bank);const adapter=adapters[bank];if(!adapter)fail('Banco não suportado.');if(format!=='csv'&&adapter.readPDF)return adapter.readPDF(text);const items=[],issues=[];
  if(format==='csv'){
  const rows=csvRows(text.replace(/^\uFEFF/,''));const heads=(rows.shift()||[]).map(normalize);
  const col=names=>{const found=heads.map((h,i)=>names.includes(h)?i:-1).filter(i=>i>=0);if(found.length>1)fail('Cabeçalho ambíguo: há colunas repetidas para o mesmo campo.');return found[0]??-1;};const di=col(adapter.date),ni=col(adapter.desc),vi=col(adapter.value);
@@ -94,6 +139,6 @@ function validBytes(value,min,max){return Array.isArray(value)&&value.length>=mi
 async function key(password,salt,usage){if(!globalThis.crypto?.subtle)fail('Criptografia indisponível. Use navegador compatível e HTTPS.');if(password.length<12)fail('Use uma senha com pelo menos 12 caracteres.');const material=await crypto.subtle.importKey('raw',new TextEncoder().encode(password),'PBKDF2',false,['deriveKey']);return crypto.subtle.deriveKey({name:'PBKDF2',salt,iterations:310000,hash:'SHA-256'},material,{name:'AES-GCM',length:256},false,[usage]);}
 async function encrypt(data,password){if(!globalThis.crypto?.subtle)fail('Criptografia indisponível. Use navegador compatível e HTTPS.');const payload=new TextEncoder().encode(JSON.stringify(data));if(payload.byteLength>10*1024*1024)fail('Backup excede 10 MB de dados serializados. Preserve os anexos originais e revise o tamanho antes de exportar.');const salt=crypto.getRandomValues(new Uint8Array(16)),iv=crypto.getRandomValues(new Uint8Array(12));const k=await key(password,salt,'encrypt');const body=await crypto.subtle.encrypt({name:'AES-GCM',iv},k,payload);return {format:'fatura-backup-v1',salt:[...salt],iv:[...iv],body:[...new Uint8Array(body)]};}
 async function decrypt(envelope,password){if(!envelope||envelope.format!=='fatura-backup-v1'||!validBytes(envelope.salt,16,16)||!validBytes(envelope.iv,12,12)||!validBytes(envelope.body,16,16*1024*1024))fail('Backup inválido.');const k=await key(password,new Uint8Array(envelope.salt),'decrypt');const body=await crypto.subtle.decrypt({name:'AES-GCM',iv:new Uint8Array(envelope.iv)},k,new Uint8Array(envelope.body));return JSON.parse(new TextDecoder().decode(body));}
-const api={money,cents,month,date,addMonth,split,validateGroup,groupMembers,csvRows,adapters,extractTotal,parse,installment,validateInstallments,fingerprint,reconcile,validateImport,project,allocations,statement,csvCell,encrypt,decrypt};
+const api={money,cents,month,date,addMonth,split,validateGroup,groupMembers,csvRows,adapters,canonicalBank,detectBank,extractTotal,parse,installment,validateInstallments,fingerprint,reconcile,validateImport,project,allocations,statement,csvCell,encrypt,decrypt};
 if(typeof module!=='undefined')module.exports=api;else root.Fatura=api;
 })(globalThis);

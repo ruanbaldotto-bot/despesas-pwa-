@@ -1,4 +1,4 @@
-export async function readPDF(file) {
+export async function readPDF(file, options = {}) {
   if (file.size != null && file.size > 20 * 1024 * 1024) {
     throw new Error('Arquivo excede 20 MB.');
   }
@@ -14,10 +14,12 @@ export async function readPDF(file) {
   const task = pdfjs.getDocument({
     data: new Uint8Array(await file.arrayBuffer()),
     isEvalSupported: false,
+    password: options.password || undefined,
     cMapUrl: cmapUrl,
     cMapPacked: true,
     standardFontDataUrl: fontUrl,
   });
+  delete options.password;
   try {
     const pdf = await task.promise;
     if (pdf.numPages > 100) throw new Error('PDF excede 100 páginas.');
@@ -51,6 +53,9 @@ export async function readPDF(file) {
     const text = lines.join('\n');
     if (!text.trim()) throw new Error('PDF sem texto extraível. Use CSV; não há OCR.');
     return text;
+  } catch (error) {
+    if (error?.name === 'PasswordException') throw new Error('PDF protegido: informe a senha temporária correta ou importe uma cópia desbloqueada.');
+    throw error;
   } finally {
     // Also release the worker after password, invalid-document and text-limit failures.
     await task.destroy();
