@@ -31,3 +31,5 @@ Layouts bancários comerciais precisam de homologação autorizada. Sem OCR, inf
 Git push sem interação falhou porque não há credencial disponível. O conector GitHub leu o repositório, mas criar blob e criar branch retornaram HTTP 403 “Resource not accessible by integration”. Nenhuma branch remota ou PR foi criado. Não houve rejeição de revisão automática; a recusa veio do GitHub.
 
 Para concluir: autenticar o Git no GitHub ou conceder escrita à integração. Em seguida enviar `feature/fatura-inteligente` e abrir PR para `main`, preferencialmente draft pelas homologações pendentes. A descrição pronta está em PR.md. Não colocar tokens em arquivos, linha de comando, frontend ou chat.
+
+Estado posterior: a continuação do desenvolvimento e a bateria de 63 testes estão registradas em [HOMOLOGACAO_2.md](HOMOLOGACAO_2.md). Esta página preserva o registro da primeira entrega.

@@ -7,12 +7,12 @@ function money(v){
  let s=String(v).trim().replace(/^R\$\s*/,'');
  if(s.includes(',')){if(!/^-?(?:\d+|\d{1,3}(?:\.\d{3})+),\d{1,2}$/.test(s))fail('Valor monetário inválido.');s=s.replaceAll('.','').replace(',','.');}
  if(!/^-?\d+(?:\.\d{1,2})?$/.test(s))fail('Use no máximo duas casas decimais.');
- const neg=s.startsWith('-');s=s.replace('-','');const [a,b='']=s.split('.');return integer((neg?-1:1)*(Number(a)*100+Number(b.padEnd(2,'0'))));
+ const neg=s.startsWith('-');s=s.replace('-','');const [a,b='']=s.split('.');return integer(Number((neg?-1n:1n)*(BigInt(a)*100n+BigInt(b.padEnd(2,'0')))));
 }
 function cents(e){return e.amountCents!=null?integer(e.amountCents):money(Number(e.amount).toFixed(2));}
 function month(s){if(!/^\d{4}-(0[1-9]|1[0-2])$/.test(s))fail('Mês inválido.');return s;}
 function addMonth(s,n){month(s);let d=new Date(s+'-01T12:00:00Z');d.setUTCMonth(d.getUTCMonth()+n);return d.toISOString().slice(0,7);}
-function date(s){if(!/^\d{4}-\d{2}-\d{2}$/.test(s)||new Date(s+'T12:00:00Z').toISOString().slice(0,10)!==s)fail('Data ISO inválida.');return s;}
+function date(s){if(typeof s!=='string'||!/^\d{4}-\d{2}-\d{2}$/.test(s))fail('Data ISO inválida.');const d=new Date(s+'T12:00:00Z');if(!Number.isFinite(d.getTime())||d.toISOString().slice(0,10)!==s)fail('Data ISO inválida.');return s;}
 function split(total,parts,percent=false){
  integer(total);const sign=total<0?-1:1;total=Math.abs(total);
  if(!parts.length||new Set(parts.map(p=>p.personId)).size!==parts.length)fail('Responsáveis repetidos ou ausentes.');
@@ -26,12 +26,22 @@ function split(total,parts,percent=false){
  return rows.map(({personId,amountCents})=>({personId,amountCents:sign*amountCents}));
 }
 function csvRows(text){
- const first=text.split(/\r?\n/)[0];const sep=first.includes(';')?';':',';
- const rows=[];let row=[],cell='',quote=false;
- for(let i=0;i<text.length;i++){let c=text[i];if(c==='"'){if(quote&&text[i+1]==='"'){cell+='"';i++;}else quote=!quote;}
- else if(!quote&&(c===sep||c==='\n')){row.push(cell.replace(/\r$/,''));cell='';if(c==='\n'){rows.push(row);row=[];}}
- else cell+=c;}
- if(quote)fail('CSV com aspas incompletas.');if(cell||row.length){row.push(cell.replace(/\r$/,''));rows.push(row);}return rows;
+ const first=text.split(/\r?\n/)[0];let inside=false,commas=0,semicolons=0;
+ for(const c of first){if(c==='"')inside=!inside;else if(!inside){if(c===',')commas++;if(c===';')semicolons++;}}
+ const sep=semicolons>commas?';':',';
+ const rows=[];let row=[],cell='',quote=false,closed=false;
+ function finishCell(){row.push(cell);cell='';closed=false;}
+ function finishRow(){finishCell();rows.push(row);row=[];}
+ for(let i=0;i<text.length;i++){
+  const c=text[i];
+  if(quote){if(c==='"'){if(text[i+1]==='"'){cell+='"';i++;}else{quote=false;closed=true;}}else cell+=c;continue;}
+  if(c===sep){finishCell();continue;}
+  if(c==='\n'||c==='\r'){if(c==='\r'&&text[i+1]==='\n')i++;finishRow();continue;}
+  if(closed){if(c===' '||c==='\t')continue;fail('Texto fora das aspas do campo CSV.');}
+  if(c==='"'){if(cell.length)fail('Aspas fora do início do campo CSV.');quote=true;continue;}
+  cell+=c;
+ }
+ if(quote)fail('CSV com aspas incompletas.');if(cell||row.length||closed)finishRow();return rows;
 }
 const normalize=s=>s.normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim().toLowerCase();
 const adapters={
@@ -47,42 +57,45 @@ function parse(text,bank,format){
  const adapter=adapters[bank];if(!adapter)fail('Banco não suportado.');const items=[],issues=[];
  if(format==='csv'){
  const rows=csvRows(text.replace(/^\uFEFF/,''));const heads=(rows.shift()||[]).map(normalize);
- const col=names=>heads.findIndex(h=>names.includes(h));const di=col(adapter.date),ni=col(adapter.desc),vi=col(adapter.value);
+ const col=names=>{const found=heads.map((h,i)=>names.includes(h)?i:-1).filter(i=>i>=0);if(found.length>1)fail('Cabeçalho ambíguo: há colunas repetidas para o mesmo campo.');return found[0]??-1;};const di=col(adapter.date),ni=col(adapter.desc),vi=col(adapter.value);
  if([di,ni,vi].includes(-1))fail('Cabeçalho não reconhecido. Use data, descricao, valor; datas com ano.');
- rows.forEach((r,i)=>{if(r.every(v=>!v.trim()))return;try{const note=r[ni]?.trim();if(!note)fail('Descrição ausente.');items.push(make(parseDate(r[di]),note,money(r[vi])));}catch(e){issues.push(`Linha ${i+2}: ${e.message}`);}});
+ rows.forEach((r,i)=>{if(r.every(v=>!v.trim()))return;try{if(r.length!==heads.length)fail('Quantidade de colunas divergente do cabeçalho.');const note=r[ni]?.trim();if(!note)fail('Descrição ausente.');items.push(make(parseDate(r[di]),note,money(r[vi])));}catch(e){issues.push(`Linha ${i+2}: ${e.message}`);}});
  }else{
- text.split(/\r?\n/).forEach((line,i)=>{if(!line.trim()||extractTotal(line)!==null)return;const m=line.match(/^\s*(\d{2}\/\d{2}\/\d{4}|\d{4}-\d{2}-\d{2})\s+(.+?)\s+(?:R\$\s*)?(-?[\d.]+,\d{2})\s*$/);if(!m){issues.push(`Linha ${i+1} não reconhecida: revise no documento.`);return;}try{items.push(make(parseDate(m[1]),m[2],money(m[3])));}catch(e){issues.push(`Linha ${i+1}: ${e.message}`);}});
+ text.split(/\r?\n/).forEach((line,i)=>{line=line.replace(/\u00a0/g,' ');if(!line.trim()||extractTotal(line)!==null)return;const m=line.match(/^\s*(\d{2}\/\d{2}\/\d{4}|\d{4}-\d{2}-\d{2})\s+(.+?)\s+(?:R\$\s*)?(-?[\d.]+,\d{2})\s*$/);if(!m){issues.push(`Linha ${i+1} não reconhecida: revise no documento.`);return;}try{items.push(make(parseDate(m[1]),m[2],money(m[3])));}catch(e){issues.push(`Linha ${i+1}: ${e.message}`);}});
  }
- return {items,issues,reportedTotalCents:extractTotal(text)};
+ return {items,issues,reportedTotalCents:format==='csv'?null:extractTotal(text)};
 }
-function make(dateValue,note,value){const kind=/pagamento/i.test(note)?'bankPayment':/estorno|credito/i.test(normalize(note))?'refund':'purchase';return {date:dateValue,note,amountCents:kind==='purchase'?value:-Math.abs(value),kind,...installment(note)};}
+function make(dateValue,note,value){const label=normalize(note);const kind=/^pagamento(?: recebido| efetuado| de fatura| da fatura)?(?:\s|$)/.test(label)?'bankPayment':/^(?:estorno|credito)(?:\s|$)/.test(label)||value<0?'refund':'purchase';return {date:dateValue,note,amountCents:kind==='purchase'?value:-Math.abs(value),kind,...installment(note)};}
+function validateInstallments(e){const n=e.installmentNumber,t=e.installmentsTotal;if(n==null&&t==null)return;if(!Number.isInteger(n)||!Number.isInteger(t)||n<1||t<n||t>120)fail('Parcelamento inválido: use parcela e total de 1 a 120.');}
 function fingerprint(e){return JSON.stringify([e.cardId,e.invoiceMonth,e.date?.slice(0,10),normalize(e.note||''),cents(e),e.installmentNumber||null,e.installmentsTotal||null]);}
 function reconcile(items,total){integer(total);const sum=items.reduce((s,e)=>integer(s+cents(e)),0);return {sum,difference:integer(total-sum),ok:sum===total};}
-function validateImport(items,existing,total){if(!items.length)fail('Sem lançamentos.');items.forEach(e=>{date(e.date);month(e.invoiceMonth);cents(e);if(!e.note?.trim()||!e.cardId)fail('Compra incompleta.');});if(!reconcile(items,total).ok)fail('Total não conciliado.');
+function validateImport(items,existing,total){if(!items.length)fail('Sem lançamentos.');items.forEach(e=>{date(e.date);month(e.invoiceMonth);cents(e);validateInstallments(e);if(!e.note?.trim()||!e.cardId)fail('Compra incompleta.');});if(!reconcile(items,total).ok)fail('Total não conciliado.');
  const old=new Set(existing.map(fingerprint)),seen=new Set();for(const e of items){const key=fingerprint(e);if(old.has(key)||seen.has(key))fail('Possível duplicidade. Revise as compras coincidentes antes de importar.');seen.add(key);}return items;}
 function project(expenses,start,horizon){
  month(start);if(![3,6,12,24].includes(horizon))fail('Horizonte inválido.');const out=Array.from({length:horizon},(_,i)=>({month:addMonth(start,i),confirmed:0,estimated:0,items:[]}));
  const actual=new Set(expenses.filter(e=>e.groupId).map(e=>`${e.groupId}|${e.invoiceMonth||e.date.slice(0,7)}`));
- const latest=new Map();for(const e of expenses){const key=e.groupId||e.id;const prior=latest.get(key);if(!prior||(prior.invoiceMonth||prior.date.slice(0,7))<(e.invoiceMonth||e.date.slice(0,7)))latest.set(key,e);}
+ const baseOf=e=>e.invoiceMonth||e.date.slice(0,7);
+ const anchors=new Map();for(const e of expenses){if(!e.groupId||e.kind==='bankPayment'||e.kind==='refund')continue;for(const target of out){if(baseOf(e)>=target.month)continue;const key=e.groupId+'|'+target.month,prior=anchors.get(key);if(!prior||baseOf(prior)<baseOf(e))anchors.set(key,e);}}
  for(const e of expenses){const base=e.invoiceMonth||e.date.slice(0,7);const direct=out.find(r=>r.month===base);if(direct&&e.kind!=='bankPayment'){direct.confirmed=integer(direct.confirmed+cents(e));direct.items.push({...e,estimated:false});}
- if(e.kind==='bankPayment'||e.kind==='refund'||latest.get(e.groupId||e.id)!==e)continue;
+ if(e.kind==='bankPayment'||e.kind==='refund')continue;
  const remaining=e.installmentsTotal&&e.installmentNumber?e.installmentsTotal-e.installmentNumber:0;
- for(const target of out){const m=target.month;const n=(Number(m.slice(0,4))-Number(base.slice(0,4)))*12+Number(m.slice(5))-Number(base.slice(5));if(n<=0||(!e.recurring&&n>remaining))continue;if(actual.has(`${e.groupId}|${m}`))continue;const row=out.find(r=>r.month===m);if(row){row.estimated=integer(row.estimated+cents(e));row.items.push({...e,invoiceMonth:m,estimated:true,installmentNumber:remaining?e.installmentNumber+n:null});}}
+ for(const target of out){const m=target.month;const n=(Number(m.slice(0,4))-Number(base.slice(0,4)))*12+Number(m.slice(5))-Number(base.slice(5));if(n<=0||(!e.recurring&&n>remaining))continue;if(actual.has(`${e.groupId}|${m}`))continue;if(e.groupId&&anchors.get(e.groupId+'|'+m)!==e)continue;const row=out.find(r=>r.month===m);if(row){row.estimated=integer(row.estimated+cents(e));row.items.push({...e,invoiceMonth:m,estimated:true,installmentNumber:remaining?e.installmentNumber+n:null});}}
  }return out;
 }
 function validateGroup(rows){
- if(rows.length<2||rows.some(e=>!e.installmentNumber||!e.cardId)||new Set(rows.map(e=>e.cardId)).size!==1||new Set(rows.map(e=>e.installmentsTotal)).size!==1||new Set(rows.map(cents)).size!==1||new Set(rows.map(e=>e.installmentNumber)).size!==rows.length)fail('Selecione parcelas distintas do mesmo cartão, valor e total.');
+ if(rows.length<2||rows.some(e=>!e.installmentNumber||!e.cardId||cents(e)<=0||e.kind==='refund'||e.kind==='bankPayment')||new Set(rows.map(e=>e.cardId)).size!==1||new Set(rows.map(e=>e.installmentsTotal)).size!==1||new Set(rows.map(cents)).size!==1||new Set(rows.map(e=>e.installmentNumber)).size!==rows.length)fail('Selecione parcelas distintas do mesmo cartão, valor e total.');
  const first=rows[0];for(const e of rows)if(addMonth(first.invoiceMonth||first.date.slice(0,7),e.installmentNumber-first.installmentNumber)!==(e.invoiceMonth||e.date.slice(0,7)))fail('Meses e sequência das parcelas não conferem.');return true;
 }
 function groupMembers(expenses,ids){const selected=expenses.filter(e=>ids.includes(e.id));if(selected.length!==ids.length)fail('Seleção de parcelas inválida.');const groups=[...new Set(selected.map(e=>e.groupId).filter(Boolean))];if(groups.length>1)fail('Não associe grupos já distintos sem revisar o histórico.');const rows=groups.length?expenses.filter(e=>e.groupId===groups[0]||ids.includes(e.id)):selected;validateGroup(rows);return rows;}
-function allocations(expense,events){const relevant=events.filter(e=>e.type==='allocation'&&(e.expenseId===expense.id||(expense.groupId&&e.groupId===expense.groupId&&e.propagate)));return relevant.sort((a,b)=>(a.sequence||0)-(b.sequence||0)||String(a.createdAt||'').localeCompare(b.createdAt||'')).at(-1)?.parts||[];}
-function statement(personId,m,expenses,events){month(m);const lines=[];for(const e of expenses){if((e.invoiceMonth||e.date.slice(0,7))!==m||e.kind==='bankPayment')continue;const part=allocations(e,events).find(p=>p.personId===personId);if(part)lines.push({date:e.date.slice(0,10),note:e.note,amountCents:part.amountCents});}
+function allocations(expense,events,allExpenses=[]){const effective=e=>e.effectiveMonth||(()=>{const source=allExpenses.find(x=>x.id===e.expenseId);return source?(source.invoiceMonth||source.date.slice(0,7)):null;})();const relevant=events.filter(e=>e.type==='allocation'&&(e.expenseId===expense.id||(expense.groupId&&e.groupId===expense.groupId&&e.propagate&&effective(e)&&(expense.invoiceMonth||expense.date.slice(0,7))>=effective(e))));return relevant.sort((a,b)=>(a.sequence||0)-(b.sequence||0)||String(a.createdAt||'').localeCompare(b.createdAt||'')).at(-1)?.parts||[];}
+function statement(personId,m,expenses,events){month(m);const lines=[];for(const e of expenses){if((e.invoiceMonth||e.date.slice(0,7))!==m||e.kind==='bankPayment')continue;const part=allocations(e,events,expenses).find(p=>p.personId===personId);if(part)lines.push({date:e.date.slice(0,10),note:e.note,amountCents:part.amountCents});}
  const total=lines.reduce((s,e)=>integer(s+e.amountCents),0),payments=events.filter(e=>e.type==='familyPayment'&&e.personId===personId&&e.month===m);const paid=payments.reduce((s,e)=>integer(s+e.amountCents),0);return {personId,month:m,lines,total,paid,pending:integer(total-paid),payments};}
 function csvCell(v){let s=String(v??'');if(/^[\s]*[=+@-]/.test(s))s="'"+s;return '"'+s.replaceAll('"','""')+'"';}
-async function key(password,salt,usage){if(password.length<12)fail('Use uma senha com pelo menos 12 caracteres.');const material=await crypto.subtle.importKey('raw',new TextEncoder().encode(password),'PBKDF2',false,['deriveKey']);return crypto.subtle.deriveKey({name:'PBKDF2',salt,iterations:310000,hash:'SHA-256'},material,{name:'AES-GCM',length:256},false,[usage]);}
-async function encrypt(data,password){const salt=crypto.getRandomValues(new Uint8Array(16)),iv=crypto.getRandomValues(new Uint8Array(12));const k=await key(password,salt,'encrypt');const body=await crypto.subtle.encrypt({name:'AES-GCM',iv},k,new TextEncoder().encode(JSON.stringify(data)));return {format:'fatura-backup-v1',salt:[...salt],iv:[...iv],body:[...new Uint8Array(body)]};}
-async function decrypt(envelope,password){if(envelope.format!=='fatura-backup-v1'||envelope.salt?.length!==16||envelope.iv?.length!==12||!Array.isArray(envelope.body))fail('Backup inválido.');const k=await key(password,new Uint8Array(envelope.salt),'decrypt');const body=await crypto.subtle.decrypt({name:'AES-GCM',iv:new Uint8Array(envelope.iv)},k,new Uint8Array(envelope.body));return JSON.parse(new TextDecoder().decode(body));}
-const api={money,cents,month,date,addMonth,split,validateGroup,groupMembers,csvRows,adapters,extractTotal,parse,installment,fingerprint,reconcile,validateImport,project,allocations,statement,csvCell,encrypt,decrypt};
+function validBytes(value,min,max){return Array.isArray(value)&&value.length>=min&&value.length<=max&&value.every(v=>Number.isInteger(v)&&v>=0&&v<=255);}
+async function key(password,salt,usage){if(!globalThis.crypto?.subtle)fail('Criptografia indisponível. Use navegador compatível e HTTPS.');if(password.length<12)fail('Use uma senha com pelo menos 12 caracteres.');const material=await crypto.subtle.importKey('raw',new TextEncoder().encode(password),'PBKDF2',false,['deriveKey']);return crypto.subtle.deriveKey({name:'PBKDF2',salt,iterations:310000,hash:'SHA-256'},material,{name:'AES-GCM',length:256},false,[usage]);}
+async function encrypt(data,password){if(!globalThis.crypto?.subtle)fail('Criptografia indisponível. Use navegador compatível e HTTPS.');const payload=new TextEncoder().encode(JSON.stringify(data));if(payload.byteLength>10*1024*1024)fail('Backup excede 10 MB de dados serializados. Preserve os anexos originais e revise o tamanho antes de exportar.');const salt=crypto.getRandomValues(new Uint8Array(16)),iv=crypto.getRandomValues(new Uint8Array(12));const k=await key(password,salt,'encrypt');const body=await crypto.subtle.encrypt({name:'AES-GCM',iv},k,payload);return {format:'fatura-backup-v1',salt:[...salt],iv:[...iv],body:[...new Uint8Array(body)]};}
+async function decrypt(envelope,password){if(!envelope||envelope.format!=='fatura-backup-v1'||!validBytes(envelope.salt,16,16)||!validBytes(envelope.iv,12,12)||!validBytes(envelope.body,16,16*1024*1024))fail('Backup inválido.');const k=await key(password,new Uint8Array(envelope.salt),'decrypt');const body=await crypto.subtle.decrypt({name:'AES-GCM',iv:new Uint8Array(envelope.iv)},k,new Uint8Array(envelope.body));return JSON.parse(new TextDecoder().decode(body));}
+const api={money,cents,month,date,addMonth,split,validateGroup,groupMembers,csvRows,adapters,extractTotal,parse,installment,validateInstallments,fingerprint,reconcile,validateImport,project,allocations,statement,csvCell,encrypt,decrypt};
 if(typeof module!=='undefined')module.exports=api;else root.Fatura=api;
 })(globalThis);
 

@@ -19,3 +19,9 @@ Os módulos usam recursos de plataforma: IndexedDB, Web Crypto, File API, servic
 ## Limites deliberados
 
 Sem sincronização, autenticação de servidor ou Face ID. A trava local não cria uma fronteira de segurança entre pessoas usando o mesmo aparelho. Impressão/PDF é delegada ao diálogo do sistema e não retorna um PDF anexável automaticamente. Gráfico usa barras e detalhes expansíveis acessíveis, sem biblioteca externa. Adaptadores contemplam cabeçalhos CSV por banco e texto tabular conservador compartilhado para PDF; não representam homologação dos layouts comerciais dos bancos.
+
+## Atualização incremental desta rodada
+
+Eventos novos de atribuição incluem competência de início da propagação; eventos antigos podem recuperá-la pelo lançamento de origem. Sem evidência da competência, a propagação é recusada em vez de aplicada retroativamente. A projeção seleciona, para cada grupo e mês, a observação confirmada mais recente anterior ao mês, cobrindo lacunas intermediárias sem duplicar confirmados; a seleção é pré-calculada para evitar varrer todas as despesas a cada parcela.
+
+A demo usa despesasDemoDB e cache próprio por escopo, sem ler ou copiar despesasDB. Essa separação é operacional; uma página com acesso à mesma origem pode abrir ambos os bancos. Nenhum dado foi migrado ou apagado. Trava e persistência continuam mecanismos de conveniência, sem criptografia de IndexedDB. Consulte o relatório de segurança atualizado antes de uma futura decisão de migração criptográfica.

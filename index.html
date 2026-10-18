@@ -13,22 +13,22 @@
   <title>Despesas</title>
   <link rel="stylesheet" href="styles.css">
 </head>
-<body>
-  <div id="lockOverlay" class="lock-overlay"><div class="card"><h2>Fatura inteligente</h2><p>Carregando… Se a trava estiver ativa, informe sua senha.</p><form id="unlockForm"><label for="unlockPassword">Senha da trava</label><input id="unlockPassword" type="password" autocomplete="current-password"><button>Desbloquear</button></form></div></div>
+<body class="screen-locked">
+  <div id="lockOverlay" class="lock-overlay" role="dialog" aria-modal="true" aria-label="Trava de tela"><div class="card"><h2>Fatura inteligente</h2><p>Carregando… Se a trava estiver ativa, informe sua senha.</p><form id="unlockForm"><label for="unlockPassword">Senha da trava</label><input id="unlockPassword" type="password" autocomplete="current-password"><button>Desbloquear</button></form></div></div>
   <pre id="printOutput"></pre>
-  <header class="app-header">
+  <header class="app-header" inert aria-hidden="true">
     <h1>Despesas</h1>
     <button id="btnInstall" class="ghost" hidden>Instalar</button>
   </header>
 
-  <nav class="tabs">
+  <nav class="tabs" inert aria-hidden="true">
     <button class="tab active" data-tab="lancamentos">Lançamentos</button>
     <button class="tab" data-tab="resumo">Resumo</button>
     <button class="tab" data-tab="categorias">Categorias</button>
     <button class="tab" data-tab="cartoes">Cartões</button>
   </nav>
 
-  <main>
+  <main inert aria-hidden="true">
     <!-- Lançamentos -->
     <section id="lancamentos" class="tab-panel active">
       <div class="card">

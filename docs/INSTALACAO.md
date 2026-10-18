@@ -26,3 +26,7 @@ Não exponha a pasta inteira como servidor genérico, pois inclui Git e arquivos
 8. Confira teclado, fontes, safe areas, largura 320–430px, rolagem das abas, VoiceOver e retorno após bloqueio do aparelho. Verifique atualização fechando todas as abas antigas.
 
 Registro atual: nenhum iPhone físico testado; o navegador integrado também não conseguiu acessar a prévia local. Testes de DOM não substituem revisão visual.
+
+## Atualização de homologação
+
+Use o roteiro detalhado e critérios em [HOMOLOGACAO_IPHONE.md](HOMOLOGACAO_IPHONE.md). A build da demo agora produz quatro PDFs e quatro CSVs locais em demo/faturas-sinteticas. Para resolver autenticação sem expor credenciais, consulte [PUBLICACAO_GITHUB.md](PUBLICACAO_GITHUB.md). Se a porta de prévia estiver ocupada, use uma porta livre com a variável FATURA_PREVIEW_PORT; o servidor permanece apenas em 127.0.0.1.
