@@ -68,6 +68,12 @@ function datedBankRow(line){
 }
 function bankResult(items,issues,totals,metadata,bank){const unique=[...new Set(totals)];if(unique.length>1)issues.push('Totais declarados conflitantes; confira o total manualmente.');return {items,issues,reportedTotalCents:unique.length===1?unique[0]:null,metadata,bank};}
 // Short dates require an explicit transaction period, never the current year or due year alone.
+function reviewPeriod_(value){
+ if(!value||value.confirmed!==true)fail('Confirme explicitamente o período aplicável às datas dos lançamentos.');
+ const from=date(value.from),to=date(value.to),days=(Date.parse(to)-Date.parse(from))/86400000;
+ if(days<0||days>366)fail('Período de revisão inválido: informe até 366 dias; datas com mais de um ano possível exigem correção individual.');
+ return {from,to};
+}
 function itauCycle_(lines){
  const ranges=[];
  for(const raw of lines){const n=normalize(raw),m=n.match(/^(?:periodo (?:de lancamentos|da fatura)|ciclo da fatura)\s*:?\s*(\d{2}\/\d{2}\/\d{4})\s+(?:a|ate|-)\s+(\d{2}\/\d{2}\/\d{4})$/);if(!m)continue;
@@ -100,9 +106,9 @@ function itauTotal_(line){
  const m=n.match(new RegExp('^'+label+'\\s*(?:\\(r\\$\\))?\\s*[:=\\-]?\\s*(?:r\\$\\s*)?(-?[\\d.]+,\\d{2})\\s*$'));
  return {value:m?money(m[1]):null,label:new RegExp('^'+label+'\\s*(?:\\(r\\$\\))?\\s*[:=]?\\s*$').test(n)};
 }
-function readItau(text){
- const items=[],issues=[],totals=[],metadata={},lines=text.split(/\r?\n/).map(s=>s.replace(/\u00a0/g,' ').trim()),cycle=itauCycle_(lines);let section='transactions',explicitSection=false;
- metadata.dateContext=cycle?'período explícito':'ausente ou ambíguo';
+function readItau(text,options={}){
+ const items=[],issues=[],totals=[],metadata={},lines=text.split(/\r?\n/).map(s=>s.replace(/\u00a0/g,' ').trim()),cycle=options.reviewPeriod?reviewPeriod_(options.reviewPeriod):itauCycle_(lines);let section='transactions',explicitSection=false;
+ metadata.dateContext=cycle?(options.reviewPeriod?'período confirmado na revisão':'período explícito'):'ausente ou ambíguo';if(options.reviewPeriod)metadata.reviewPeriod={from:cycle.from,to:cycle.to};
  const consumed=new Set(),recognizedSources=new Set(),summarySources=new Set();
  lines.forEach((line,i)=>{const n=normalize(line);if(!line||consumed.has(i))return;
   if(/^(?:opcoes de parcelamento|parcelamento da fatura|simulacao|oferta de parcelamento)\b/.test(n)){section='offer';explicitSection=false;issues.push('Linha '+(i+1)+': oferta de financiamento excluída das compras.');return;}
@@ -158,8 +164,8 @@ function extractTotal(text){
  for(let n=0;n<lines.length;n++){const m=lines[n].match(inline);if(m)values.push(money(m[1]));else if(onlyLabel.test(lines[n])){const next=(lines[n+1]||'').match(/^(?:r\$\s*)?(-?[\d.]+,\d{2})$/);if(next)values.push(money(next[1]));}}
  const unique=[...new Set(values)];return unique.length===1?unique[0]:null;
 }
-function parseBase(text,bank,format){
- bank=canonicalBank(bank);const adapter=adapters[bank];if(!adapter)fail('Banco não suportado.');if(format!=='csv'&&adapter.readPDF)return adapter.readPDF(text);const items=[],issues=[],exceptions=[];
+function parseBase(text,bank,format,options={}){
+ bank=canonicalBank(bank);const adapter=adapters[bank];if(!adapter)fail('Banco não suportado.');if(format!=='csv'&&adapter.readPDF)return adapter.readPDF(text,options);const items=[],issues=[],exceptions=[];
  if(format==='csv'){
  const rows=csvRows(text.replace(/^\uFEFF/,''));const heads=(rows.shift()||[]).map(normalize);
  const col=names=>{const found=heads.map((h,i)=>names.includes(h)?i:-1).filter(i=>i>=0);if(found.length>1)fail('Cabeçalho ambíguo: há colunas repetidas para o mesmo campo.');return found[0]??-1;};const di=col(adapter.date),ni=col(adapter.desc),vi=col(adapter.value);
@@ -201,7 +207,7 @@ function pdfDiagnostics(text,result){
  }
  return {...clean,issues,diagnostics};
 }
-function parse(text,bank,format){const result=parseBase(text,bank,format);if(format!=='csv'&&result.bank!=='Itaú'&&result.reportedTotalCents==null&&!result.issues.some(s=>/conflitantes/.test(s)))result.reportedTotalCents=extractTotal(text);return format==='csv'?result:pdfDiagnostics(text,result);}
+function parse(text,bank,format,options={}){const result=parseBase(text,bank,format,options);if(format!=='csv'&&result.bank!=='Itaú'&&result.reportedTotalCents==null&&!result.issues.some(s=>/conflitantes/.test(s)))result.reportedTotalCents=extractTotal(text);return format==='csv'?result:pdfDiagnostics(text,result);}
 function reviewItem(fields){
  const item={date:date(fields.date),note:String(fields.note||'').trim(),kind:fields.kind,amountCents:money(fields.value)};
  if(!item.note||!['purchase','refund','bankPayment'].includes(item.kind))fail('Informe descrição e tipo válidos.');

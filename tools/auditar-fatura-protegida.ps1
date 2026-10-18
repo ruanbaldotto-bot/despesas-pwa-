@@ -1,4 +1,4 @@
-param([Parameter(Mandatory=$true)][string]$Bank,[Parameter(Mandatory=$true)][string]$File)
+param([Parameter(Mandatory=$true)][string]$Bank,[Parameter(Mandatory=$true)][string]$File,[switch]$ReviewPeriod)
 $ErrorActionPreference='Stop'
 # Resolve code from this script's directory, independent of the shell working directory.
 $taskNode=(Get-Command node -CommandType Application -ErrorAction Stop).Source
@@ -13,10 +13,21 @@ $taskSecret=Read-Host 'Senha do PDF (somente neste computador)' -AsSecureString
 $taskPointer=[Runtime.InteropServices.Marshal]::SecureStringToBSTR($taskSecret)
 try {
  $taskPassword=[Runtime.InteropServices.Marshal]::PtrToStringBSTR($taskPointer)
- $taskPassword | & $taskNode $taskAuditor $Bank $File --password-stdin --expected-engine $taskEngine.codeHash
+ $taskInput=@{password=$taskPassword}
+ if($ReviewPeriod){
+  $taskFrom=Read-Host 'Data inicial das compras (AAAA-MM-DD), somente neste computador'
+  $taskTo=Read-Host 'Data final das compras (AAAA-MM-DD), somente neste computador'
+  $taskConfirmation=Read-Host 'Confirma que o período se aplica às datas originais dos lançamentos? Digite SIM'
+  if($taskConfirmation -cne 'SIM'){throw 'Período não confirmado; auditoria cancelada.'}
+  $taskInput.reviewPeriod=@{from=$taskFrom;to=$taskTo;confirmed=$true}
+ }
+ $taskInput | ConvertTo-Json -Compress | & $taskNode $taskAuditor $Bank $File --private-input-stdin --expected-engine $taskEngine.codeHash
  if($LASTEXITCODE -ne 0){throw 'Auditoria não concluída. Nenhum conteúdo foi registrado.'}
 } finally {
  [Runtime.InteropServices.Marshal]::ZeroFreeBSTR($taskPointer)
  $taskPassword=$null
+ $taskInput=$null
+ $taskFrom=$null
+ $taskTo=$null
  $taskSecret.Dispose()
 }

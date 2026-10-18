@@ -9,6 +9,6 @@ function engineInfo(){
  const coreSynced=core===fs.readFileSync(path.join(root,'core.js'),'utf8');
  const clientSynced='<script>\n'+core+'\n</script>\n'===fs.readFileSync(path.join(root,'CoreClient.html'),'utf8');
  const importsLocal=fs.realpathSync(require.resolve('../core.js'))===fs.realpathSync(path.join(root,'core.js'));
- return {version:'jabu-audit-4',codeHash:hash.digest('hex'),node:process.versions.node,platform:process.platform,coreSynced,clientSynced,importsLocal};
+ return {version:'jabu-audit-5',codeHash:hash.digest('hex'),node:process.versions.node,platform:process.platform,coreSynced,clientSynced,importsLocal};
 }
 module.exports={engineInfo};

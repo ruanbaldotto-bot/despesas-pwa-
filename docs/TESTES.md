@@ -87,3 +87,11 @@ Pacote privado sintético regenerado com backup do anterior, allowlist de 226 ar
 113 testes aprovados por Node (npm indisponível): 106 casos anteriores preservados + 7 novos; dois casos de oferta/interface reforçados para exigir revisão explícita. Verificação de versão e sincronização, imports independentes do diretório corrente, recusa de cópia gerada divergente, fingerprint de dependências, cobertura de 17 candidatos, probes posicionais, PDF protegido e histograma de motivos sem conteúdo real. Todos os dados usados nos testes são sintéticos.
 
 Motor jabu-audit-4, SHA-256 de4534a439d6cab5cd149124236fdb21e7e854f18a8b7ab56b3c7ce3eee4160e. O hash identifica somente arquivos de código, não documentos. A auditoria real anterior não tinha versão comprovável e permaneceu em 1 transação/156 exceções/total ausente. Nova execução protegida com versão e métricas posicionais pendente. Não alegar reconstrução real validada, conciliação ou homologação de iPhone. Pacote privado sintético e HTTPS verificados, cache 82ae0a816493df1b, somente loopback e Funnel desativado.
+
+## Itaú estrutural — motor 5
+
+123 testes aprovados com Node (npm indisponível), preservando os 113 anteriores e acrescentando dez regressões para reconstrução posicional, período confirmado, UI, PDF binário sintético, senha, stdin e backup. Núcleo sincronizado por tools/sync-core.cjs; vendor/demo regenerados. Testes de interface em DOM simulado não equivalem a Safari físico ou homologação Google.
+
+Motor jabu-audit-5, SHA-256 44252207aa18b1b718037fcc2f2eac758473f23c4d16e2c459b0b256dcceb9fa. Última evidência real ainda é do motor 4 (1 transação, 173 exceções, total ausente, zero compras parceladas e zero candidatas fora da revisão). Validação protegida do motor 5 solicitada; nenhuma conclusão financeira real antecipada.
+
+Pacote sintético privado validado, cache 074bc5a33b855aa5; anterior preservado, arquivos conferidos por TLS válido, loopback e Funnel desativado. Atualização efetiva e revisão por período no iPhone aguardam execução física.
