@@ -2,7 +2,7 @@ const {test}=require('node:test'),assert=require('node:assert/strict'),fs=requir
 const F=require('../core.js');
 const cell=(str,x,y,width=40)=>({str,transform:[10,0,0,10,x,y],width});
 test('motor identifica fontes sincronizadas e resolve imports independentemente da pasta corrente',()=>{
- const auditor=path.resolve('tools/auditar-faturas-locais.cjs'),result=cp.spawnSync(process.execPath,[auditor,'--engine-info'],{cwd:os.tmpdir(),encoding:'utf8'});assert.equal(result.status,0);const info=JSON.parse(result.stdout);assert.equal(info.version,'jabu-audit-8');assert.match(info.codeHash,/^[a-f0-9]{64}$/);assert.equal(info.coreSynced,true);assert.equal(info.clientSynced,true);assert.equal(info.importsLocal,true);assert.ok(!result.stdout.includes(process.cwd()));
+ const auditor=path.resolve('tools/auditar-faturas-locais.cjs'),result=cp.spawnSync(process.execPath,[auditor,'--engine-info'],{cwd:os.tmpdir(),encoding:'utf8'});assert.equal(result.status,0);const info=JSON.parse(result.stdout);assert.equal(info.version,'jabu-audit-9');assert.match(info.codeHash,/^[a-f0-9]{64}$/);assert.equal(info.coreSynced,true);assert.equal(info.clientSynced,true);assert.equal(info.importsLocal,true);assert.ok(!result.stdout.includes(process.cwd()));
  const blocked=cp.spawnSync(process.execPath,[auditor,'Itaú','DOCUMENTO_SENTINELA.pdf','--expected-engine','desatualizado'],{cwd:os.tmpdir(),encoding:'utf8'});assert.notEqual(blocked.status,0);assert.ok(!blocked.stderr.includes('DOCUMENTO_SENTINELA'));assert.equal(blocked.stdout,'');
 });
 test('fingerprint muda quando dependência muda e recusa core gerado divergente',()=>{

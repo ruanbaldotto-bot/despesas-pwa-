@@ -264,6 +264,45 @@ function reviewItem(fields){
  if(fields.installmentsTotal!==''&&fields.installmentsTotal!=null)item.installmentsTotal=Number(fields.installmentsTotal);
  validateInstallments(item);return item;
 }
+function planReviewGroup(exceptions,ids,settings){
+ if(!Array.isArray(ids)||!ids.length||new Set(ids).size!==ids.length)fail('Selecione registros distintos para a prévia.');
+ const scope=settings.scope;if(!['current','future','previousPayments','information'].includes(scope))fail('Escolha o escopo do grupo.');
+ if(String(settings.reason||'').trim().length>300)fail('Use um motivo com até 300 caracteres.');
+ if(scope!=='current'&&String(settings.reason||'').trim().length<5)fail('Informe o motivo da classificação deste grupo.');
+ const range=scope==='current'&&(settings.from||settings.to)?reviewPeriod_({from:settings.from,to:settings.to,confirmed:true}):null;
+ if(scope==='current')month(settings.invoiceMonth);
+ return ids.map(id=>{
+  const exception=exceptions[id];if(!Number.isInteger(id)||!exception||exception.resolved)fail('A seleção mudou; gere uma nova prévia.');
+  try{
+   if(scope!=='current')return {id,line:exception.line,scope,action:'classify',reason:String(settings.reason).trim()};
+   let candidate;
+   try{candidate=itauRow_(String(exception.source||'').replace(/\r?\n/g,' '),null,true);}catch(e){if(e.candidate)candidate=e.candidate;else throw e;}
+   if(!candidate)fail('Estrutura incompleta: corrija este registro individualmente.');
+   let resolved=candidate.date;
+   if(!resolved){if(!range)fail('Informe o período deste grupo; o ano não será inferido do vencimento.');const dates=[];for(let year=Number(range.from.slice(0,4));year<=Number(range.to.slice(0,4));year++){try{const d=parseDate(candidate.shortDate+'/'+year);if(d>=range.from&&d<=range.to)dates.push(d);}catch{}}if(dates.length!==1)fail('Data fora do período ou com mais de um ano possível; ajuste individualmente.');resolved=dates[0];}
+   else if(range&&(resolved<range.from||resolved>range.to))fail('Data completa fora do período escolhido; ajuste individualmente.');
+   const item={date:date(resolved),note:candidate.note,kind:candidate.kind,amountCents:integer(candidate.amountCents),invoiceMonth:settings.invoiceMonth};
+   if(candidate.installmentNumber!=null){item.installmentNumber=candidate.installmentNumber;item.installmentsTotal=candidate.installmentsTotal;}validateInstallments(item);
+   return {id,line:exception.line,scope,action:'import',item};
+  }catch(e){return {id,line:exception.line,scope,action:'blocked',reason:e.message};}
+ });
+}
+function reviewReadiness(items,exceptions,total,invoiceMonth,future){
+ const reconciliation=reconcile(items,total),unresolved=exceptions.filter(e=>!e.resolved).length;
+ let invalid=0;for(const e of items){try{date(e.date);cents(e);validateInstallments(e);}catch{invalid++;}}
+ const keys=new Set();let duplicates=0;for(const e of items){const key=fingerprint({...e,invoiceMonth:e.invoiceMonth||invoiceMonth});if(keys.has(key))duplicates++;keys.add(key);}
+ let missingLinks=0;for(const e of exceptions)if(e.resolved&&e.reviewScope==='current'&&e.assistedItemId&&!items.some(i=>i.reviewId===e.assistedItemId))missingLinks++;
+ const result={...reconciliation,unresolved,invalid,duplicates,missingLinks,futureStatus:'notApplicable',canSave:false};
+ if(future&&Object.keys(future).length){
+  result.futureStatus='pending';
+  if(!unresolved&&!invalid&&!duplicates&&reconciliation.ok&&items.length){
+   try{month(invoiceMonth);const purchases=items.filter(e=>e.kind==='purchase'&&e.installmentNumber&&e.installmentNumber<e.installmentsTotal),next=purchases.reduce((s,e)=>s+BigInt(cents(e)),0n),remaining=purchases.reduce((s,e)=>s+BigInt(cents(e))*BigInt(e.installmentsTotal-e.installmentNumber),0n);
+    if(future.nextCents!=null&&future.remainingCents!=null&&future.totalCents!=null){[future.nextCents,future.remainingCents,future.totalCents].forEach(integer);result.futureNextDifferenceCents=integer(Number(BigInt(future.nextCents)-next));result.futureTotalDifferenceCents=integer(Number(BigInt(future.totalCents)-remaining));result.futureStatus=BigInt(future.nextCents)+BigInt(future.remainingCents)===BigInt(future.totalCents)&&!result.futureNextDifferenceCents&&!result.futureTotalDifferenceCents?'exact':'different';}
+   }catch{result.futureStatus='pending';}
+  }
+ }
+ result.canSave=!!items.length&&reconciliation.ok&&!unresolved&&!invalid&&!duplicates&&!missingLinks&&['notApplicable','exact'].includes(result.futureStatus);return result;
+}
 function make(dateValue,note,value){const label=normalize(note);const kind=/^pagamento(?: recebido| efetuado| de fatura| da fatura)?(?:\s|$)/.test(label)?'bankPayment':/^(?:estorno|credito)(?:\s|$)/.test(label)||value<0?'refund':'purchase';return {date:dateValue,note,amountCents:kind==='purchase'?value:-Math.abs(value),kind,...installment(note)};}
 function validateInstallments(e){const n=e.installmentNumber,t=e.installmentsTotal;if(n==null&&t==null)return;if(!Number.isInteger(n)||!Number.isInteger(t)||n<1||t<n||t>120)fail('Parcelamento inválido: use parcela e total de 1 a 120.');}
 function fingerprint(e){return JSON.stringify([e.cardId,e.invoiceMonth,e.date?.slice(0,10),normalize(e.note||''),cents(e),e.installmentNumber||null,e.installmentsTotal||null]);}
@@ -294,7 +333,7 @@ function validBytes(value,min,max){return Array.isArray(value)&&value.length>=mi
 async function key(password,salt,usage){if(!globalThis.crypto?.subtle)fail('Criptografia indisponível. Use navegador compatível e HTTPS.');if(password.length<12)fail('Use uma senha com pelo menos 12 caracteres.');const material=await crypto.subtle.importKey('raw',new TextEncoder().encode(password),'PBKDF2',false,['deriveKey']);return crypto.subtle.deriveKey({name:'PBKDF2',salt,iterations:310000,hash:'SHA-256'},material,{name:'AES-GCM',length:256},false,[usage]);}
 async function encrypt(data,password){if(!globalThis.crypto?.subtle)fail('Criptografia indisponível. Use navegador compatível e HTTPS.');const payload=new TextEncoder().encode(JSON.stringify(data));if(payload.byteLength>10*1024*1024)fail('Backup excede 10 MB de dados serializados. Preserve os anexos originais e revise o tamanho antes de exportar.');const salt=crypto.getRandomValues(new Uint8Array(16)),iv=crypto.getRandomValues(new Uint8Array(12));const k=await key(password,salt,'encrypt');const body=await crypto.subtle.encrypt({name:'AES-GCM',iv},k,payload);return {format:'fatura-backup-v1',salt:[...salt],iv:[...iv],body:[...new Uint8Array(body)]};}
 async function decrypt(envelope,password){if(!envelope||envelope.format!=='fatura-backup-v1'||!validBytes(envelope.salt,16,16)||!validBytes(envelope.iv,12,12)||!validBytes(envelope.body,16,16*1024*1024))fail('Backup inválido.');const k=await key(password,new Uint8Array(envelope.salt),'decrypt');const body=await crypto.subtle.decrypt({name:'AES-GCM',iv:new Uint8Array(envelope.iv)},k,new Uint8Array(envelope.body));return JSON.parse(new TextDecoder().decode(body));}
-const api={inspectItauCurrentTotal,reviewItem,money,cents,month,date,addMonth,split,validateGroup,groupMembers,csvRows,adapters,canonicalBank,detectBank,extractTotal,parse,installment,validateInstallments,fingerprint,reconcile,validateImport,project,allocations,statement,csvCell,encrypt,decrypt};
+const api={planReviewGroup,reviewReadiness,inspectItauCurrentTotal,reviewItem,money,cents,month,date,addMonth,split,validateGroup,groupMembers,csvRows,adapters,canonicalBank,detectBank,extractTotal,parse,installment,validateInstallments,fingerprint,reconcile,validateImport,project,allocations,statement,csvCell,encrypt,decrypt};
 if(typeof module!=='undefined')module.exports=api;else root.Fatura=api;
 })(globalThis);
 

@@ -113,3 +113,9 @@ Motor jabu-audit-7 / SHA-256 e88aa7bac3fc098b329cfe7796ed8aab6b6b8100264a961c446
 147 testes aprovados com Node (npm indisponível), incluindo todos os 139 anteriores e oito regressões para leitura compartilhada de total, escopos financeiros, rejeições/conflitos, PDF protegido e preservação de 90 candidatos/50 parcelas sintéticas. Confirmação de período habilita os itens somente no cenário com datas verificadas; nenhuma data inferida do vencimento. Perfis de exceções e totalTrace retornam apenas categorias/contagens.
 
 Motor jabu-audit-8 / SHA-256 0e4e8ff900d22fc734029bb6550eff08a304c15303299971fb4dff7cacfba419. Última evidência real é do motor 7: 90 candidatos pendentes/50 parcelas estruturadas/0 prontos/167 exceções/0 candidatas fora da revisão; total atual ausente e quatro referências conferidas. Nova auditoria protegida solicitada, sem aprovação financeira antecipada. Pacote privado sintético cache a6a7a3ebb4618aeb validado, anterior preservado, HTTPS/loopback verificados e Funnel falso. Não equivale a homologação Google ou teste físico de iPhone.
+
+## Revisão assistida por grupos — motor 9
+
+157 testes aprovados: 147 preservados e dez novos para grupos selecionados, períodos entre anos, exceções individuais, prévia sem mutação, invalidação, escopos com motivo, reabertura, duplicidades, conciliação, projeção e salvamento atômico/backup. Apenas fixtures sintéticas. Conferência no navegador integrado mostrou duas datas de anos diferentes e bloqueio por escopos pendentes apesar de zero diferença. Não equivale a homologação Google ou teste físico de iPhone. Roteiro: REVISAO_ASSISTIDA_IPHONE.md.
+
+Pacote privado: 226 arquivos permitidos, 12 amostras sintéticas exatas, banco isolado e integridade do cache a66f4fe5fd92fbe4. Pacote anterior preservado e dados do navegador mantidos. Motor jabu-audit-9, SHA-256 dfe00ee5efe99a06761db90d93bc484fd8a38cffb73dbcd009c6d1d7f85ae2bf.

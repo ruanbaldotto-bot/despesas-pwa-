@@ -226,3 +226,9 @@ parcelValidation informa contagens de parcelas prontas, pendentes de data/seçã
 Executar o wrapper protegido com -CompareReferences, conferindo versão/hash. Acrescentar -ReviewPeriod somente com evidência suficiente para confirmar as datas originais. Retornar apenas JSON agregado incluindo totalTrace, itauStructure, structuralRecognition, parcelValidation, reviewProfile, referenceComparison e coverage. Sem confirmação das datas, zero itens prontos pode coexistir com candidatos estruturados preservados; não confundir essa situação com aprovação financeira.
 
 Nenhuma homologação real concluída. Exigir total atual correto, reconhecimento individual confiável, revisão das datas, conciliação exata, parcelas coerentes e cobertura preservada. Pacote privado exclusivamente sintético regenerado e anterior preservado: 226 arquivos/12 exemplos exatos, banco isolado, cache **a6a7a3ebb4618aeb**. Arquivos atualizados conferidos por HTTPS válido, somente 127.0.0.1:43189, Serve privado/Funnel falso. IndexedDB existente e main preservados; sem deploy público. Validação física no iPhone permanece pendente.
+
+## Evidência recebida do motor 8 e revisão assistida
+
+O proprietário confirmou cinco referências financeiras, total atual aceito, 90 candidatos aguardando data, 50 candidatos parcelados, 168 exceções, 52 escopos desconhecidos e zero candidatas fora da revisão. Conciliação e projeção ainda não aprovadas. Nenhum conteúdo real foi processado ou divulgado nesta etapa.
+
+Motor 9 acrescenta revisão explícita por grupos com prévia, exceções individuais e decisões de escopo reabríveis. Totais existentes preservados; futuros/pagamentos/informações classificados não geram compras. Salvamento bloqueado enquanto houver pendências, duplicidades, diferença atual ou conferência futura incompleta/divergente. 157 testes sintéticos aprovados. Procedimento físico e limites em REVISAO_ASSISTIDA_IPHONE.md; Itaú continua pendente de homologação.

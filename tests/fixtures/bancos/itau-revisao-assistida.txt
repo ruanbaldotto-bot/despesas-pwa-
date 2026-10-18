@@ -1,0 +1,14 @@
+Itaú — FATURA EXCLUSIVAMENTE SINTÉTICA PARA REVISÃO ASSISTIDA
+Pagamentos efetuados
+20/12 PAGAMENTO EFETUADO -1,11
+Lançamentos atuais
+12/12 LOJA FICTICIA 02/10 1,20
+05/01 OUTRA FICTICIA 01/04 2,30
+Total dos lançamentos atuais 3,50
+Compras parceladas - próximas faturas
+Próxima fatura parcelada 3,50
+Demais faturas parceladas 13,00
+Total futuro 16,50
+06/02 DETALHE FUTURO FICTICIO 02/04 2,30
+Resumo da fatura
+Informação fictícia a conferir 9,90
