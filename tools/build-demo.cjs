@@ -5,13 +5,13 @@ const vm = require('node:vm');
 const productionApp = fs.readFileSync('app.js', 'utf8');
 if (!productionApp.includes("const DB_NAME='despesasDB'")) throw new Error('Nome do banco principal não localizado; geração cancelada antes de copiar arquivos.');
 fs.mkdirSync('demo', { recursive: true });
-for (const file of ['index.html', 'app.js', 'core.js', 'storage.js', 'intelligence.js', 'pdf-reader.mjs', 'styles.css', 'manifest.json', 'sw.js', 'assets.js']) {
+for (const file of ['index.html', 'app.js', 'core.js', 'storage.js', 'intelligence.js', 'pdf-reader.mjs', 'styles.css', 'design-tokens.css', 'manifest.json', 'sw.js', 'assets.js']) {
   fs.copyFileSync(file, path.join('demo', file));
 }
 for (const directory of ['icons', 'vendor']) fs.cpSync(directory, path.join('demo', directory), { recursive: true });
 fs.writeFileSync('demo/app.js', productionApp.replace("const DB_NAME='despesasDB'", "const DB_NAME='despesasDemoDB'"));
 fs.writeFileSync('demo/intelligence.js', fs.readFileSync('demo/intelligence.js', 'utf8').replace("new BroadcastChannel('fatura-screen-lock')", "new BroadcastChannel('fatura-demo-screen-lock')"));
-fs.writeFileSync('demo/index.html', fs.readFileSync('demo/index.html', 'utf8').replace('<h1>Despesas</h1>', '<h1>Despesas — Demo sintética</h1>').replace('Armazenamento local • Faça backups', 'Somente dados sintéticos • Banco de teste separado • Faça backups'));
+fs.writeFileSync('demo/index.html', fs.readFileSync('demo/index.html', 'utf8').replace('<span>Jabu<small', '<span>Jabu · Demo sintética<small').replace('Armazenamento local • Faça backups', 'Somente dados sintéticos • Banco de teste separado • Faça backups'));
 const context = { self: {} };
 vm.runInNewContext(fs.readFileSync('assets.js', 'utf8'), context);
 const hash = crypto.createHash('sha256');

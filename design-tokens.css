@@ -1,0 +1,10 @@
+:root {
+  --mata:#0F3D2E; --folhas:#2E6B4F; --salvia:#A7C4A8; --ceu:#7CC0E8; --mar:#1E6F8C; --terra:#B88A5A; --areia:#F6F1E6; --jabuticaba:#3A1E3E;
+  --bg:var(--areia); --surface:#FFFDF8; --surface-soft:#EFEBDD; --card:var(--surface); --text:var(--mata); --muted:#52645A; --line:#D7DED1;
+  --primary:var(--folhas); --accent:var(--jabuticaba); --ok:var(--folhas); --danger:#923D38; --warning:#76502D; --focus:var(--mar);
+  --chart-confirmed:var(--mar); --chart-estimated:var(--salvia); --chart-recurring:var(--terra); --chart-installments:var(--jabuticaba);
+  --bank-nubank:#7025A1; --bank-santander:#AF2631; --bank-porto:#21485A; --bank-mercado:#176A9A; --bank-itau:#A24D16; --bank-bradesco:#A82642;
+  --font-body:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif; --font-display:Georgia,"Times New Roman",serif;
+  --s1:4px; --s2:8px; --s3:12px; --s4:16px; --s5:24px; --s6:32px; --s7:48px; --radius:20px; --radius-sm:12px; --radius-pill:999px;
+  --shadow:0 8px 28px rgb(15 61 46 / .06); --shadow-raised:0 12px 36px rgb(15 61 46 / .12); --control-height:46px; --transition:150ms ease;
+}

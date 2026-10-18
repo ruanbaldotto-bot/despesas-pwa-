@@ -1,9 +1,7 @@
-# Reforça faturas locais, segurança e homologação sintética do PWA
+# Jabu — Evolução do PWA financeiro, identidade visual e novos bancos.
 
-O protótipo original não inicializava por declarações duplicadas. A evolução preserva seu IndexedDB, categorias, despesas, resumos e visual, acrescentando cartões, revisão local PDF/CSV com conciliação atômica, projeções e divisão familiar. Backup criptografado e demonstrativos individuais não dependem de serviços externos.
+Draft iniciado a partir de 40aa4c5, preservando o histórico e as regras financeiras do PWA.
 
-Esta rodada corrige lacunas intermediárias de projeção, propagação retroativa de divisão, reconhecimento de créditos, revisão obsoleta e ambiguidades CSV. Reforça staging/envelope de backup, bloqueio síncrono/por inatividade e confirmação de compartilhamento compatível com ativação por toque. Separa banco/cache da demo para evitar abertura acidental do banco principal. Não migra nem apaga dados.
+Em implementação: identidade Jabu, telas mobile, adaptadores específicos Itaú e Bradesco/Bradescard e senha temporária de PDF. A descrição será atualizada junto aos commits.
 
-Validação: **63 testes aprovados**, com quatro CSVs e quatro PDFs binários sintéticos, 306 cenários de divisão, conciliação/duplicidades, persistência/migração, backup adulterado e integração DOM. Auditoria de dependências de produção sem avisos conhecidos. IndexedDB/DOM/service worker usam simulações; extração usa PDF.js real. Evidência em docs/TESTES.md e docs/test-output-homologacao.txt.
-
-Manter **draft**: pendem revisão visual, Safari/iPhone físico, offline real, seletor de compartilhamento/impressão e validação autorizada dos layouts comerciais. IndexedDB não é criptografado; trava é barreira casual. Sem deploy, alteração de main ou de visibilidade. Roteiro manual em docs/HOMOLOGACAO_IPHONE.md; limites em docs/SEGURANCA.md e docs/USO.md.
+Base existente: 63 testes aprovados. Não há homologação em iPhone físico nem nos PDFs bancários reais citados na missão, que não foram anexados. Sem deploy, merge ou transmissão de documentos financeiros reais.
