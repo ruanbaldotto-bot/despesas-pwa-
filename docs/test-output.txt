@@ -1,0 +1,51 @@
+✔ artefatos locais: regras sincronizadas, manifest e todos os recursos de cache existem (95.4537ms)
+✔ service worker: somente GET local listado; ativação preserva caches de outros apps (43.423ms)
+✔ centavos: formatos, limites e entrada decimal HTML (3.9045ms)
+✔ CSV sintético Santander (4.0334ms)
+✔ CSV sintético Porto Bank (0.6386ms)
+✔ CSV sintético Mercado Pago (0.2928ms)
+✔ CSV sintético Nubank (0.3133ms)
+✔ não inventa data nem parcela; linhas inválidas expostas (1.4642ms)
+✔ texto PDF preserva descrição e reconhece pagamento/estorno (1.1389ms)
+✔ conciliação e deduplicação conservadora (0.9505ms)
+✔ projeção 3 meses com composição (0.827ms)
+✔ projeção 6 meses com composição (0.8066ms)
+✔ projeção 12 meses com composição (0.4991ms)
+✔ projeção 24 meses com composição (0.295ms)
+✔ parcela confirmada substitui estimativa de grupo e evita duplicar recorrência (0.3901ms)
+✔ pagamento ao banco excluído da projeção (0.2422ms)
+✔ grupo exige mesma cronologia, cartão, valor e quantidade (0.6866ms)
+✔ divisão em centavos e resíduos por maior resto (2.529ms)
+✔ demonstrativo isola pessoas e pagamentos; atribuição mais recente por sequência (0.7397ms)
+✔ atribuição parcelada só propaga em grupo confirmado (0.1986ms)
+✔ CSV protege fórmulas e aspas (0.3909ms)
+✔ backup autenticado: ida/volta, senha errada, adulteração (281.5644ms)
+✔ total explícito extraído sem inferir saldo ausente (0.398ms)
+✔ recorrência antiga continua no horizonte e centavos não dependem da idade (0.3502ms)
+✔ associar nova parcela preserva grupo e seus vínculos anteriores (0.4377ms)
+✔ integração DOM: inicializa, cadastra categorias/cartões, arquiva sem apagar (502.8393ms)
+✔ integração DOM: dinheiro preserva decimal, família e CSV revisado (300.5152ms)
+✔ migração real do esquema v4 para v5 preserva compras legadas (77.5828ms)
+Warning: Cannot load "@napi-rs/canvas" package: "Error: Cannot find module '@napi-rs/canvas'
+Require stack:
+- <projeto>\vendor\pdf.mjs".
+Warning: Cannot polyfill `DOMMatrix`, rendering may be broken.
+Warning: Cannot polyfill `Path2D`, rendering may be broken.
+Warning: Indexing all PDF objects
+✔ PDF real sintético: extração local e reconhecimento (227.8665ms)
+✔ PDF inválido falha explicitamente (2.684ms)
+✔ importação e persistência com commit completo (14.0734ms)
+✔ duplicidade concorrente e repetida não gera compras órfãs (5.5356ms)
+✔ total divergente cancela toda a transação (1.6145ms)
+✔ divisão em lote atômica e histórico imutável ordenado (4.3719ms)
+✔ backup e restauração preservam anexos e não sobrescrevem em conflito (5.8785ms)
+✔ restauração aborta também inclusões de outras tabelas em conflito (3.924ms)
+✔ persistência continua após fechar e reabrir o banco (2.5175ms)
+ℹ tests 37
+ℹ suites 0
+ℹ pass 37
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 3448.8115

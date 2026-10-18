@@ -2,29 +2,35 @@
 <html lang="pt-BR">
 <head>
   <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; worker-src 'self'; connect-src 'self'; img-src 'self' blob: data:; style-src 'self' 'unsafe-inline'; object-src 'none'; base-uri 'self'; form-action 'none'">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#0b1220">
+  <meta name="referrer" content="no-referrer">
+  <meta name="theme-color" content="#0F3D2E">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
-  <title>Despesas</title>
+  <title>Jabu — Suas finanças com mais raízes</title>
+  <link rel="stylesheet" href="design-tokens.css">
   <link rel="stylesheet" href="styles.css">
+  <link rel="icon" href="icons/favicon.svg" type="image/svg+xml">
 </head>
-<body>
-  <header class="app-header">
-    <h1>Despesas</h1>
+<body class="screen-locked">
+  <div id="lockOverlay" class="lock-overlay" role="dialog" aria-modal="true" aria-label="Trava de tela"><div class="card"><h2>Jabu</h2><p>Carregando… Se a trava estiver ativa, informe sua senha.</p><form id="unlockForm"><label for="unlockPassword">Senha da trava</label><input id="unlockPassword" type="password" autocomplete="current-password"><button>Desbloquear</button></form></div></div>
+  <pre id="printOutput"></pre>
+  <header class="app-header" inert aria-hidden="true">
+    <h1><img src="icons/jabu-symbol.svg" alt="" width="44" height="44"><span>Jabu<small class="brand-caption">SUAS FINANÇAS COM MAIS RAÍZES</small></span></h1>
     <button id="btnInstall" class="ghost" hidden>Instalar</button>
   </header>
 
-  <nav class="tabs">
+  <nav class="tabs" inert aria-hidden="true">
     <button class="tab active" data-tab="lancamentos">Lançamentos</button>
     <button class="tab" data-tab="resumo">Resumo</button>
     <button class="tab" data-tab="categorias">Categorias</button>
     <button class="tab" data-tab="cartoes">Cartões</button>
   </nav>
 
-  <main>
+  <main inert aria-hidden="true">
     <!-- Lançamentos -->
     <section id="lancamentos" class="tab-panel active">
       <div class="card">
@@ -154,7 +160,7 @@
       </div>
 
       <div class="card">
-        <h2>Importar fatura (PDF)</h2>
+        <h2>Importar fatura (PDF ou CSV)</h2>
         <form id="formFatura">
           <div class="grid-3">
             <div>
@@ -166,7 +172,7 @@
               <input type="month" id="faturaMes" required>
             </div>
             <div>
-              <label>PDF da fatura</label>
+              <label>Documento da fatura</label>
               <input type="file" id="faturaPDF" accept="application/pdf" required>
             </div>
           </div>
@@ -175,7 +181,7 @@
           </div>
         </form>
         <div class="sub" style="margin-top:6px">
-          <span class="badge">Beta</span> Tenta ler compras e parcelas automaticamente. Você pode revisar antes de salvar.
+          <span class="badge">Beta</span> Leitura local e conservadora. Revise datas, parcelas, créditos e total antes de salvar.
         </div>
       </div>
 
@@ -190,17 +196,14 @@
   </main>
 
   <footer class="app-footer">
-    <small>Despesas PWA • Offline • Seus dados ficam apenas no seu iPhone</small>
+    <small>Armazenamento local • Faça backups • Instalação e modo offline precisam ser verificados no seu iPhone</small>
   </footer>
 
-  <!-- pdf.js + workerSrc -->
-  <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@4.8.69/build/pdf.min.js"></script>
-  <script>
-    if (window.pdfjsLib && window.pdfjsLib.GlobalWorkerOptions) {
-      window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@4.8.69/build/pdf.worker.min.js';
-    }
-  </script>
-
+  <script src="file-reader.js"></script>
+  <script src="core.js"></script>
+  <script src="storage.js"></script>
   <script src="app.js"></script>
+  <script src="intelligence.js"></script>
+  <script src="jabu.js"></script>
 </body>
 </html>

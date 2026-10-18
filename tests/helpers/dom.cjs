@@ -1,0 +1,7 @@
+const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');const {JSDOM}=require('jsdom');const {IDBFactory}=require('fake-indexeddb');
+async function app({homologacao=false}={}){const errors=[];const dom=new JSDOM(fs.readFileSync('index.html','utf8'),{url:'https://synthetic.test/',runScripts:'outside-only'});const w=dom.window;w.indexedDB=new IDBFactory();Object.defineProperty(w,'crypto',{value:global.crypto});w.TextEncoder=TextEncoder;w.TextDecoder=TextDecoder;w.structuredClone=structuredClone;w.alert=m=>errors.push(m);w.confirm=()=>true;w.print=()=>{};w.URL.createObjectURL=()=> 'blob:synthetic';w.URL.revokeObjectURL=()=>{};for(const f of ['file-reader.js','core.js','storage.js','app.js','intelligence.js','jabu.js'])vm.runInContext(f==='app.js'&&homologacao?fs.readFileSync(f,'utf8').replace("const DB_NAME='despesasDB'","const DB_NAME='jabuHomologacaoDB'"):fs.readFileSync(f,'utf8'),dom.getInternalVMContext(),{filename:f});await wait(()=>w.document.getElementById('filterMonth')&&w.document.getElementById('lockOverlay').hidden);await w.JabuReady;assert.deepEqual(errors,[]);return {dom,w,errors,$:id=>w.document.getElementById(id)};}
+async function wait(fn){for(let n=0;n<100;n++){if(fn())return;await new Promise(r=>setTimeout(r,10));}throw new Error('Estado esperado não apareceu.');}
+const submit=(w,form)=>form.dispatchEvent(new w.Event('submit',{bubbles:true,cancelable:true}));
+
+const run=(dom,code)=>vm.runInContext(code,dom.getInternalVMContext());
+module.exports={app,wait,submit,run};

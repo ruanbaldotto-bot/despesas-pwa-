@@ -1,0 +1,14 @@
+BRADESCARD - FATURA INTEGRALMENTE SINTETICA
+Vencimento: 15/11/2031
+Total desta fatura: R$ 155,55
+Lançamentos
+01/10/2031 LOJA SINTETICA A (03/16) 100,05
+02/10/2031 LOJA SINTETICA B (01/18) 80,50
+03/10/2031 PAGAMENTO RECEBIDO 20,00-
+04/10/2031 ESTORNO SINTETICO 5,00 C
+Resumo compras parceladas
+Proxima fatura parcelada: R$ 180,55
+Demais parcelas futuras: R$ 2.488,60
+Total futuro: R$ 2.669,15
+Parcelamento da fatura
+05/10/2031 OFERTA DE FINANCIAMENTO (01/12) 10,00

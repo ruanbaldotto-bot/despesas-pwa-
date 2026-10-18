@@ -1,0 +1,234 @@
+# Leitores bancários — diagnóstico local e pendências (18/10/2026)
+
+## Resultado e limite da entrega
+
+**Homologação completa não concluída. Nenhuma fatura real foi aprovada para importação automática.** Os quatro PDFs sem senha foram extraídos localmente, mas o mapeamento não reconheceu um conjunto confiável de transações nem o total declarado. Esse é um resultado reprovado/pendente dos leitores, não ausência de compras nas faturas. Reduzir alertas não equivale a conciliar.
+
+O PDF Itaú foi encontrado, mas a leitura protegida aguarda entrada da senha no computador. Não há PDF Nubank confirmado; o caminho do CSV Nubank ainda não foi disponibilizado. Os demais CSVs também não foram fornecidos. A competência dos PDFs reais não foi confirmada automaticamente; não foi inferida de nome de arquivo, data solta ou data atual. Repetição no iPhone físico permanece pendente.
+
+## Privacidade e escopo
+
+Somente os cinco caminhos explicitamente autorizados foram verificados; todos existem nos caminhos originais. A pasta dedicada autorizada foi criada e está sem esses documentos/CSV. Não houve busca em outras pastas, cópia para o repositório ou alteração dos originais. Nenhuma fatura foi transferida para o OneDrive pela execução: a pasta escolhida pertence ao OneDrive e pode sincronizar, por isso não foi usada para cópias/extratos.
+
+A extração foi executada por Node/PDF.js locais, com dados binários em memória, recursos locais, avaliação de código PDF desativada, fetch bloqueado no processo de auditoria e saída da biblioteca silenciada. Nenhum texto, imagem, valor monetário, data de transação, senha, hash de documento ou identidade foi emitido. O modelo recebeu apenas contagens/indicadores agregados exigidos para esta matriz. Não houve visualização das faturas em ferramentas de IA, upload de faturas ou importação de documentos reais no IndexedDB de produção/demo. Originais permanecem nos locais autorizados.
+
+Ferramentas CLI não são incluídas no pacote PWA nem servidas pelo preview. A matriz abaixo é agregada e não contém nomes, cartões, CPF, valores ou nomes de arquivos bancários.
+
+## Matriz de homologação real
+
+Exceções são registros potencialmente financeiros que exigem decisão humana, não contagem certificada de compras. Zero na coluna automática significa falha de reconhecimento confiável, não fatura vazia.
+
+| Banco | Formato | Lançamentos automáticos | Exceções | Conciliação | Projeção futura | Status |
+| --- | --- | ---: | ---: | --- | --- | --- |
+| Santander | PDF | 0 | 36 | Total não reconhecido | Não validada | Pendente: layout/datas e revisão local |
+| Porto Bank | PDF | 0 | 31 | Total não reconhecido | Não validada | Pendente: layout/datas e revisão local |
+| Mercado Pago | PDF | 0 | 24 | Total não reconhecido | Não validada | Pendente: layout/datas e revisão local |
+| Bradesco/Bradescard | PDF | 0 | 20 | Total não reconhecido | Não validada | Pendente: layout/datas e revisão local |
+| Itaú | PDF | — | — | Não executada com senha | Não validada | Pendente: entrada local da senha |
+| Nubank | PDF | — | — | Não executada | Não validada | Documento não confirmado |
+| Santander | CSV | — | — | Não executada | Não validada | Não fornecido |
+| Porto Bank | CSV | — | — | Não executada | Não validada | Não fornecido |
+| Mercado Pago | CSV | — | — | Não executada | Não validada | Não fornecido |
+| Bradesco/Bradescard | CSV | — | — | Não executada | Não validada | Não fornecido |
+| Itaú | CSV | — | — | Não executada | Não validada | Não fornecido |
+| Nubank | CSV | — | — | Não executada no arquivo real | Não validada | Caminho aguardado |
+
+## Diagnóstico estrutural e correções implementadas
+
+A extração anterior produzia 262, 207 e 204 alertas nos PDFs genéricos Santander/Porto/Mercado Pago e 190 no adaptador Bradesco. Datas e valores apareciam separados em células/linhas. O extrator agora agrupa fragmentos pela coordenada vertical e ordena horizontalmente, sem depender de hasEOL como quebra obrigatória de célula. Linhas que aparentam duas transações de colunas diferentes são recusadas como ambíguas, não fundidas em uma compra. Persistem ambiguidades reais de tabelas, datas incompletas e seções: não se declara fidelidade visual integral dos PDFs.
+
+O parser diferencia candidatos financeiros, avisos gerais e textos informativos/excluídos. As 158/154/157/112 linhas informativas agrupadas dos quatro diagnósticos não viram compras. Limites, saldos, vencimentos, encargos informativos, ofertas e resumos não são usados para compensar diferença de total. O texto bruto permanece acessível localmente em uma seção avançada; o agrupamento não certifica toda a classificação. Registro não reconhecido com data/valor continua visível como exceção.
+
+Revisão individual permite alterar data completa, descrição, valor, tipo (compra/encargo, crédito/estorno ou pagamento) e parcelas. Exceção pode virar registro corrigido ou ser excluída explicitamente com motivo obrigatório. Há inclusão manual apenas de registro confirmado no documento, inclusive para decompor uma linha ambígua. Toda decisão invalida o aceite anterior. Pendência bloqueia salvar mesmo que o total coincida; conciliação exata em centavos, validação e deduplicação do backend permanecem obrigatórias. Não se gera lançamento de ajuste para fechar saldo nem se adivinha ano.
+
+CSV: moedas brasileiras, sinal antes/depois de R$, espaços não separáveis, negativo Unicode, parênteses negativos, campos entre aspas e separador sep= são tratados com validação estrita. Números ambíguos continuam rejeitados e viram exceções editáveis. **O erro do CSV Nubank real ainda não foi reproduzido**, pois esse arquivo não está disponível; as regressões são sintéticas e não substituem essa validação.
+
+O total pode ser reconhecido quando há rótulo explícito e valor isolado na célula seguinte; limites e totais conflitantes não são inferidos. Isso não resolveu automaticamente os quatro layouts reais desta rodada, conforme a matriz. Dados insuficientes continuam exigindo revisão.
+
+No iPhone, a configuração deixa de usar barra de status translúcida, e o cabeçalho soma margem à safe area. Efeito no Safari/app instalado ainda precisa de verificação física; não se recomenda excluir dados/app sem backup.
+
+## Testes e evidências
+
+**95 testes passaram, zero falhas**: todos os 85 anteriores mais dez regressões. Log somente sintético: test-output-leitores.txt. Runner node --test tests/*.test.cjs; npm não está disponível.
+
+Cobertura adicionada: CSV Nubank fictício com moeda/aspas/negativos; rejeição de ambiguidades; reconstrução de células e recusa de colunas sobrepostas; agrupamento de informações sem ocultar suspeitas; total rotulado; validação de correção individual; edição sem alterar fonte bruta e sem gravar antes de salvar; bloqueio por exceção e exclusão justificada; configuração da safe area; auditor local que preserva bytes e não imprime texto/caminho/valores da fixture. Testes anteriores continuam cobrindo senha de PDF, WebKit sem asyncIterator, conciliação, parcelas, duplicidades, projeções, família, backup e restauração. Backend/DOM dublês não equivalem a testes no iPhone ou Google.
+
+Navegador integrado via HTTPS privado: CSV exclusivamente sintético com valor malformado produziu três registros válidos e uma exceção editável, mantendo salvar bloqueado. Nenhuma fatura real foi aberta nesse navegador. Evidência visual sintética permanece local e fora do Git.
+
+## Concluir Itaú e cobertura ausente
+
+Para auditar um PDF protegido sem senha em argumentos, arquivos ou chat, executar localmente, dentro da pasta do projeto:
+
+    .\tools\auditar-fatura-protegida.ps1 -Bank 'Itaú' -File 'CAMINHO_LOCAL_AUTORIZADO.pdf'
+
+O prompt usa Read-Host -AsSecureString; a senha é enviada ao processo Node por stdin, nunca como argumento. Permanece em memória pelo tempo da leitura, sem garantia de apagamento absoluto de memória JavaScript/PowerShell. O resultado contém somente indicadores agregados. Não enviar texto, screenshots, senha ou documento ao chat. Não desativar política de execução se o script for bloqueado; relatar a limitação.
+
+Auditoria sem senha: node tools/auditar-faturas-locais.cjs 'BANCO' 'CAMINHO_AUTORIZADO'. Não usar curingas nem varrer diretórios. O proprietário deve disponibilizar o caminho do CSV Nubank e, se desejar cobertura PDF Nubank, um documento autorizado; disponibilizar CSVs dos demais bancos para homologar esses formatos reais.
+
+Para concluir os leitores, os layouts ainda pendentes precisam de conferência local por banco: competência, seção de lançamentos, composição do total, créditos/pagamentos e parcelas. Pode-se fornecer uma descrição estrutural ou uma amostra inteiramente sintética aprovada pelo proprietário, sem conteúdo real, para regressões adicionais. Não afirmar homologação automática com base na redução de alertas.
+
+## Atualização privada e próxima etapa
+
+Pacotes anteriores preservados; reconstrução usa somente a allowlist sintética, sem documentos reais. Banco de homologação preservado e produção não modificada. Servidor permanece em 127.0.0.1:43189, Serve privado e Funnel desativado; sem merge, main ou deploy público.
+
+No iPhone online com Tailscale: fechar Jabu Teste e todas as abas dessa origem; abrir online, aguardar carregamento, fechar novamente e reabrir para ativar o worker novo. Não limpar armazenamento. Testar revisão de CSV/PDF sintéticos, correção de cada campo, exceção impedindo salvar, conciliação, parcelas/projeções, duplicidade, restauração e safe areas. Registrar resultados em IPHONE_REGISTRO_HOMOLOGACAO.md. Documentos reais só devem ser revistos no fluxo local autorizado, sem screenshots/conteúdo externo. Nenhum teste físico foi marcado aprovado nesta rodada.
+
+Pacote sintético final desta rodada: versão de cache f828d8bfd994ddbf, 226 recursos permitidos e 12 amostras sintéticas conferidas. Nenhum dos documentos de auditoria integra esse pacote.
+
+## Itaú — diagnóstico agregado informado pelo proprietário
+
+Auditoria local protegida: 339 linhas, 1 transação reconhecida, 156 exceções e 177 linhas informativas. Duas linhas começam com data completa, 134 com data curta, 97 contêm múltiplas expressões no formato de data e três contêm somente valores. Total não reconhecido; nenhuma parcela identificada. **Revisão necessária; não homologado.**
+
+O contador de múltiplas datas também pode contar a notação de parcelas. Esses números não demonstram, isoladamente, quais linhas são transações ou qual ano deve ser utilizado. O diagnóstico complementar local `tools/estrutura-itau.cjs` retorna somente contagens fixas de padrões, seções conhecidas, possíveis colunas mescladas e posição do total. Não retorna texto, datas, valores nem identificadores. Candidatos a parcelas não equivalem a parcelas financeiramente reconhecidas.
+
+Executar novamente o script de auditoria protegida, com senha digitada no prompt local, e fornecer apenas o resultado agregado incluindo `itauStructure`. A senha temporária não está disponível no processo do agente. Não foi aplicada correção especulativa ao adaptador, nem declarada melhora dos resultados reais. A aplicação e o ambiente privado permanecem na versão anterior até existir uma correção validada.
+
+## Correção direcionada Itaú — validação real pendente
+
+A segunda auditoria informada pelo proprietário confirma 134 linhas iniciadas por data curta, 131 delas terminando em valor, 95 candidatos a sufixos de parcelas, duas referências ao total (uma inline), quatro seções de transações, uma transação reconhecida e 156 exceções. Não permite afirmar que as 131 linhas são compras ou identificar o ano das compras.
+
+Alterações em Core.gs, sincronizadas para core.js/CoreClient.html: datas DD/MM resolvidas somente com período explícito e único de lançamentos, de até 62 dias, e seção de transações reconhecida; virada de ano contemplada. Vencimento, competência isolada, data atual ou nome de arquivo não fornecem o ano. Datas fora do período e períodos conflitantes permanecem exceções. Compras históricas parceladas fora desse intervalo exigem revisão; não se presume que a data original pertença ao ciclo atual.
+
+Sufixos válidos associados a compras são preservados; créditos e pagamentos não geram parcelas futuras. Datas adicionais ambíguas e possíveis colunas mescladas continuam bloqueadas para revisão. Reconstrução limitada a dois/três fragmentos consecutivos em seção explícita; não cruza cabeçalhos ou totais. Não foi implementada divisão especulativa de duas colunas com base apenas em contagens.
+
+Total reconhecido em resumo, na mesma linha ou célula seguinte, incluindo rótulo com `(R$)`. Ofertas/futuro e limites não fornecem o total devido. Valores conflitantes permanecem incertos, sem fallback genérico que possa buscar total de oferta. Nenhum lançamento compensatório criado.
+
+O auditor informa dateContext, installmentPurchases e coverage: linhas candidatas financeiras, fontes reconhecidas, exceções, fontes de resumo e linhas financeiras fora da revisão. Esta última contagem pode incluir ofertas explicitamente excluídas; exige conferência, não significa automaticamente compra perdida. O resultado não expõe texto, valores, datas, caminhos nem senha.
+
+106 testes aprovados (98 anteriores + 8 regressões sintéticas), incluindo PDF protegido com segredo aleatório, reconstrução, projeções, créditos, pagamentos, conciliação e duplicidades. Fixtures são modelos sintéticos dos padrões agregados e hipóteses conservadoras; não reproduzem conteúdo real. Nova execução do auditor protegido solicitada. **Resultados reais após a correção ainda não disponíveis; leitor não homologado.**
+
+Pacote sintético privado validado (226 arquivos; 12 exemplos exatos; banco isolado) e servido novamente em loopback. Cache `ffeb54b2a07e654a`; arquivos core.js/assets.js/sw.js correspondem ao pacote por HTTPS válido. Pacote anterior preservado. Funnel desativado. Nenhum dado de navegador apagado; instalação/cache do iPhone ainda dependem de verificação física.
+
+Para atualizar o iPhone: fechar todas as janelas do Jabu e abas Safari da mesma origem; abrir online, aguardar aviso de atualização; fechar e reabrir novamente. Não limpar o armazenamento nem reinstalar para forçar a atualização. Repetir os testes com dados sintéticos e registrar o resultado físico.
+
+## Falha persistente Itaú — motor verificável e cobertura obrigatória
+
+Nova auditoria informada pelo proprietário após a alteração anterior: 339 linhas, 1 transação, 156 exceções, zero compras parceladas, total não reconhecido e contexto temporal ausente/ambíguo. Das 166 linhas candidatas financeiras, uma foi reconhecida, 148 foram encaminhadas à revisão e 17 ficaram fora. Os números anteriores não demonstraram melhora; homologação permanece reprovada/pendente.
+
+### Verificação de execução
+
+No checkout autorizado, core.js e CoreClient.html estão sincronizados com Core.gs; require.resolve aponta para o core.js relativo ao auditor. PDF.js local identificado como 6.4.299; Node local 24.19.0, Windows. O PowerShell já usava PSScriptRoot para localizar o auditor, mas não havia identificação suficiente para provar qual cópia o proprietário executou. Os campos retornados são compatíveis com código recente; não é possível afirmar retrospectivamente a versão exata daquela execução.
+
+Motor novo: **jabu-audit-4**, SHA-256 **de4534a439d6cab5cd149124236fdb21e7e854f18a8b7ab56b3c7ce3eee4160e**. Fingerprint somente de código: auditor, wrapper PowerShell, núcleo/fonte gerada, leitor, utilitários e PDF.js/worker. Nunca inclui hash da fatura, senha ou caminho do documento. Usar o script do checkout autorizado por caminho absoluto; ele resolve Node uma vez, imprime versão/hash antes do prompt oculto, exige sincronização e repassa o hash esperado ao mesmo auditor. Node recusa divergência antes de ler documento/senha. Teste executado a partir de outra pasta confirma resolução relativa ao script; teste com cópia gerada divergente é recusado. Fingerprint identifica a cópia executada; não comprova a correção financeira do parser.
+
+### Cobertura e investigação estrutural
+
+O filtro de diagnóstico podia agrupar candidatos financeiros como informações/ofertas. Agora, no Itaú, toda linha marcada pela heurística financeira que não esteja em fonte reconhecida, resumo explicitamente identificado ou exceção é encaminhada à revisão individual pendente. Isso inclui candidatos em ofertas/resumos e pode aumentar exceções; não transforma essas linhas em compras. O salvamento permanece bloqueado até revisão/exclusão explícita justificada, além da conciliação. Teste com 17 candidatos anteriormente excluídos confirma zero candidatos fora da revisão. O total de exceções pode ser maior que exceptionSourceLines porque a detecção de exceções também cobre outros formatos de data. A cobertura não é garantia de detectar qualquer formato financeiro ainda desconhecido.
+
+Novo hook local de inspeção de itens PDF, sem modificar a extração normal. Probe local retorna só contagens fixas de ordem, células de valor, linhas com múltiplos valores/datas, datas após valores, cabeçalhos e total misturado com outros elementos. Mantém em memória uma reconstrução candidata por coordenadas e compara reconhecimento/conciliação/parcelas; **modo diagnóstico, não usado para importar**. Não escolhe automaticamente a alternativa com menos exceções. Histogramas de revisão usam categorias fixas, nunca motivos arbitrários do documento.
+
+Não há senha temporária disponível no processo do agente; por isso o conteúdo e a geometria do PDF real protegido não foram inspecionados nesta etapa. A execução local protegida foi solicitada com caminho absoluto do script, retorno agregado engine/layout/reviewReasons/coverage e resultados financeiros. Nenhum texto, valor, data, imagem, senha ou documento real foi enviado ao modelo ou aos serviços externos. Não foi implementada outra interpretação especulativa de datas/total. A reconstrução candidata precisa da auditoria real antes de qualquer adoção no importador.
+
+### Evidência e próxima validação
+
+113 testes aprovados: 106 casos anteriores preservados e sete novos. Dois casos anteriores fortalecidos para a nova obrigação de revisar oferta financeira antes de salvar; nenhum caso removido. Testes novos cobrem versão/imports fora da pasta corrente, fingerprint/dependência e cópia gerada divergente, 17 candidatos, geometria sintética de colunas, ordem/total misturado, hook com PDF protegido e histograma sem vazamento. Fixtures posicionais são sintéticas; não são prova da geometria real.
+
+Executar o wrapper protegido do checkout autorizado e conferir versão/hash antes da senha. Retornar somente JSON agregado. Exigir total correto, conciliação exata, parcelas coerentes, datas ambíguas em revisão, nenhuma linha financeira candidata fora do reconhecimento/revisão e testes aprovados. Até isso ocorrer, não homologado. No iPhone, fechar/reabrir online para atualizar o cache sem apagar IndexedDB; confirmar resultados fisicamente.
+
+Pacote privado exclusivamente sintético preservado em backup e regenerado: 226 arquivos, 12 exemplos exatos e banco isolado, cache 82ae0a816493df1b. core.js/pdf-reader.mjs/assets.js/sw.js conferidos por HTTPS com TLS válido; servidor apenas 127.0.0.1:43189, Serve sem Funnel. Nenhum deploy público, dado do navegador apagado ou alteração de main.
+
+Atualização recebida do proprietário: execução real de jabu-audit-4 com hash confirmado. Quatro páginas, 339 linhas, 168 células somente monetárias; 1 transação, 173 exceções (130 sem contexto de data, 25 formato, 17 cobertura e uma coluna mesclada), zero compras parceladas, total ausente e zero candidatas financeiras fora da revisão. Cobertura corrigida confirmada nesta execução; reconhecimento financeiro não homologado. Próxima etapa autorizada: reconstrução posicional e período informado explicitamente pelo usuário na revisão.
+
+## Reconstrução estrutural Itaú e período confirmado na revisão
+
+Motor **jabu-audit-5**, SHA-256 **44252207aa18b1b718037fcc2f2eac758473f23c4d16e2c459b0b256dcceb9fa**. A última execução real comprovada pelo proprietário ainda é do motor 4: 1 transação, 173 exceções, total não reconhecido, nenhuma compra parcelada e zero candidatas financeiras fora da revisão. Não atribuir esses resultados ao motor 5 nem declarar melhora real antes da nova execução.
+
+O leitor Itaú agora usa itens posicionados de streamTextContent (mesma estrutura de texto/transform do PDF.js), preservando a correção getReader para WebKit. Não volta ao iterador assíncrono de getTextContent incompatível com a falha já reproduzida. Agrupa células por Y com tolerância, ordena por X e delimita colunas por cabeçalhos explícitos Data/Descrição ou equivalente/Valor. Sem cabeçalhos suficientes, preserva ordem visual e separa somente fronteiras claras entre transações completas: valor monetário seguido de nova data. Sufixo de parcela antes do valor permanece junto à compra. Seções/cabeçalhos separados por grande distância delimitam blocos; itens não associados continuam emitidos para revisão, sem descarte. Não há garantia de reconstruir layouts desconhecidos.
+
+Totais explícitos podem ser associados a valor único na mesma linha visual, incluindo célula R$ separada e texto lateral, mantendo o texto restante. Múltiplos valores ou associação insegura continuam ambíguos. A classificação de oferta/futuro, pagamentos, estornos e limites permanece no núcleo; não se escolhe automaticamente um total para fazer a soma coincidir. O fluxo posicional é habilitado somente para PDF Itaú no importador e no auditor.
+
+A revisão individual oferece período inicial/final e confirmação explícita de que ele vale para as datas originais dos lançamentos. Não preenchido pelo vencimento, competência ou data atual. Intervalos inválidos ou acima de 366 dias são recusados; uma data DD/MM com mais de um ano possível continua pendente. Aplicar o período refaz a revisão e invalida o aceite; a interface informa que correções individuais ainda não salvas serão substituídas. Alterar o período bloqueia salvar até reprocessar. Metadados de origem do período ficam somente no armazenamento/backup local, com validação na restauração. IndexedDB continua em claro.
+
+### Execução local protegida
+
+Usar o mesmo wrapper do checkout autorizado. Sem opções adicionais, audita a nova extração mantendo anos incertos em revisão. Se o proprietário puder confirmar o período aplicável às datas originais, adicionar **-ReviewPeriod**. O wrapper pede datas e confirmação SIM apenas no terminal local. Não informar esse período ou senha no chat. Senha e período seguem por JSON na entrada privada do processo, nunca por argumentos, arquivo temporário ou saída do auditor. O resultado inclui comparação sem período e os contadores com período confirmado. Se não houver evidência para confirmar o período, omitir a opção e corrigir datas individualmente.
+
+Retornar apenas JSON agregado: engine, transactions, exceptions, reconciliation, installmentPurchases, dateContext, coverage e métricas de layout. Critérios permanecem: total efetivo reconhecido, conciliação exata, parcelas coerentes, zero candidatas fora da revisão e validação física posterior. Redução das exceções não constitui aprovação.
+
+### Testes e ambiente
+
+123 testes aprovados (113 casos anteriores + 10 novos; nenhum caso removido). Novos testes: células posicionadas fora de ordem; duas tabelas com ofertas/compras; parcelas versus novas datas; total com moeda separada e valor ambíguo; período confirmado e anos ambíguos; revisão da interface sem escrita automática; auditor protegido; PDF binário sintético com elementos posicionados extraídos pelo PDF.js; backup com período inválido; CLI com senha/período somente via stdin. Esses testes representam separação de células e padrões informados de forma agregada, não reproduzem o documento real.
+
+Pacote privado exclusivamente sintético regenerado, anterior preservado: 226 arquivos/12 exemplos exatos, banco isolado e cache **074bc5a33b855aa5**. Arquivos core.js/intelligence.js/pdf-reader.mjs/storage.js/assets.js/sw.js comparados por HTTPS válido. Preview somente 127.0.0.1:43189, Serve privado e Funnel falso. Nenhum IndexedDB apagado. Nova auditoria real protegida e testes no iPhone permanecem pendentes. Main preservada, sem deploy público.
+
+## Itaú — colunas antes das linhas, descrições complementares e seções financeiras
+
+Motor **jabu-audit-6**, SHA-256 **76fda97eca1ccfbf6fad8fb242c731f784620f3d759ee8fac96d9d031fb3c389**. Alteração baseada na descrição estrutural fornecida pelo proprietário: duas colunas, datas curtas, descrição em linhas adicionais, parcelas, pagamentos efetuados, lançamentos atuais e resumo futuro. Não foi aberto ou transmitido o PDF/imagens reais pelo agente nesta etapa. As referências financeiras reais fornecidas não foram copiadas para código, fixtures ou relatórios; comparação é feita somente na execução local autorizada.
+
+Elementos de texto são primeiro separados em colunas por cabeçalhos ou âncoras repetidas de datas compatíveis com transações; sufixos de parcelas não fornecem âncoras quando vêm antes do valor da mesma compra. Somente depois são ordenados por Y/X e agrupados em linhas de cada coluna. Índice espacial por proximidade evita varrer toda a página para cada célula. Continuação de descrição exige proximidade vertical, alinhamento com a descrição e ausência de data, valor ou cabeçalho novo. Valor em linha adicional pode completar um registro ainda sem valor. Cabeçalhos, limites e seções interrompem a associação. Sem evidência suficiente, os elementos permanecem separados para revisão. Não se infere ano com base em vencimento.
+
+Reconhecido o rótulo explícito de total dos lançamentos atuais. A seção Pagamentos efetuados/anteriores é histórico: referências conferidas em metadados, sem criar pagamentos que abatam as compras atuais. Divergência entre total declarado e linhas do histórico exige revisão. Compatibilidade do antigo formato genérico Pagamentos e créditos preservada; sua composição não foi alterada indiscriminadamente.
+
+Resumo de compras parceladas das próximas faturas reconhece próxima, demais e total futuro, confere a soma em centavos e não cria compras. Detalhes futuros não associados com segurança continuam em revisão. Valores repetidos conflitantes ou soma divergente também permanecem para decisão individual. O auditor compara a projeção das compras parceladas reconhecidas com o resumo futuro; cobertura incompleta ou divergência não aprova a projeção. Limites de crédito não fornecem total atual nem viram transações.
+
+### Comparação privada de referências
+
+No wrapper protegido, a opção **-CompareReferences** pede apenas no terminal local as cinco referências: lançamentos atuais, pagamento anterior, próxima fatura, demais e total futuro. Valores e senha seguem por stdin, não por argumentos nem arquivo. O JSON retorna somente confere/diverge/não reconhecido em referenceComparison. Acrescentar **-ReviewPeriod** somente quando o proprietário puder confirmar o período das datas originais; sem isso as datas DD/MM seguem em revisão.
+
+Nova execução protegida solicitada, com versão/hash conferidos antes da senha. Retornar somente resultados agregados de conciliação, projeção, cobertura e reconhecimento. Não devolver valores, datas, texto, imagem ou senha. A última auditoria real com motor confirmado continua sendo a do motor 4 (1 transação, 173 exceções, total ausente, nenhuma compra parcelada e zero candidatas fora da revisão). Não há resultados reais do motor 6 e nenhuma homologação financeira concluída.
+
+### Validação sintética
+
+131 testes aprovados: 123 anteriores e oito novos. Casos novos usam valores diferentes das referências reais: pagamento anterior separado; total atual sem abatimento indevido; projeção e resumo futuro sem duplicação; datas curtas ainda pendentes sem período; limites e detalhes futuros preservados na revisão; referências conflitantes; descrição complementar em duas colunas com baselines diferentes; valor em linha adicional; âncoras de coluna sem cabeçalho; auditor protegido comparando referências privadas. Nenhum teste anterior removido. Sintaxe do wrapper PowerShell validada sem executar prompt de senha.
+
+Pacote privado sintético regenerado, anterior preservado; 226 arquivos e 12 exemplos exatos, banco isolado. Cache **33369deec4dece71**. Arquivos atualizados conferidos por HTTPS válido, preview somente 127.0.0.1:43189 e Funnel falso. Dados do navegador preservados. Atualizar o iPhone fechando e reabrindo online, sem limpar armazenamento; repetir a homologação física. Main preservada, sem deploy público.
+
+## Itaú — estrutura financeira preservada quando o ano está pendente
+
+Auditoria real **jabu-audit-6**, com hash confirmado pelo proprietário: quatro das cinco referências conferem (pagamento anterior e três campos futuros); total atual não reconhecido, uma transação pronta, 168 exceções, nenhuma compra parcelada pronta e zero candidatas fora da revisão. Projeção divergente/incompleta. Não houve conciliação real aprovada. Os valores financeiros reais não são reproduzidos aqui.
+
+Motor novo: **jabu-audit-7**, SHA-256 **e88aa7bac3fc098b329cfe7796ed8aab6b6b8100264a961c446f835fea8d9f50**. Nova auditoria protegida solicitada; resultados do motor 7 ainda não recebidos.
+
+### Falhas corrigidas e limites
+
+A resolução da data acontecia antes de preservar descrição, valor, tipo e parcelas: a ausência do ano interrompia a leitura desses campos. Agora campos monetários/parcelas são validados primeiro e, quando a data não pode ser confirmada, ficam em **pendingDateItems**, separados dos itens importáveis. Nenhum ano é atribuído; datas DD/MM impossíveis também não viram candidatos validados. O corretor individual recebe descrição, valor e parcela como sugestão e exige uma data completa válida. Fragmentos associados compartilham uma única decisão de revisão, mantendo todas as linhas-fonte cobertas. Isso não é transação aprovada nem gravação automática.
+
+O leitor retorna o escopo de cada linha por coluna/página, além do texto. Colunas não herdam seção futura de outra coluna. Uma continuação tabular sem cabeçalho de seção só pode receber escopo atual quando há total atual explícito fechando a tabela e cabeçalho tabular ou pelo menos três linhas financeiras de data/valor no mesmo bloco. Se houver seção futura/oferta explícita, seus detalhes não são reclassificados por essa regra. O mapa é descartado quando o texto bruto é editado, evitando escopo posicional obsoleto. Sem evidência, a seção continua pendente.
+
+Total de lançamentos atuais com rótulo explícito pode ser reconhecido após uma seção futura, sem buscar total genérico naquela seção ou em ofertas. Rótulo quebrado em baselines próximos da mesma coluna pode ser reunido; limites e totais concorrentes não fornecem valor de compensação. Resumos futuros explícitos continuam reconhecidos em continuação sem cabeçalho. Pagamento anterior e referências futuras mantêm tratamento separado, com regressões preservadas.
+
+### Relatório sem inflar reconhecimento
+
+transactions continua significando registros com data completa prontos para revisão final. structuralRecognition informa separadamente ready, awaitingDate, awaitingSection e installmentPurchases (inclui apenas prontos e candidatos da seção atual confirmada). monetaryCheck/futureCheck comparam numericamente esses candidatos com total e resumo, sem emitir valores. Mesmo quando coincidem, o resultado é **valores coincidem; revisão pendente**, nunca aprovação. Candidatos de seção incerta não entram nessa soma; demais exceções permanecem bloqueantes. Conferência provisória não valida ano, cobertura semântica ou transações desconhecidas.
+
+Executar o mesmo wrapper protegido, conferir versão/hash e usar -CompareReferences. Acrescentar -ReviewPeriod somente com período original confirmado pelo proprietário. Sem isso, é esperado que transactions continue baixo enquanto awaitingDate mostre registros estruturados pendentes. Enviar somente JSON agregado incluindo structuralRecognition, reviewReasons, itauStructure, referenceComparison, reconciliation, futureProjectionCheck e coverage. Não transmitir texto, senha, datas, valores ou imagens reais. Aprovação exige reconhecimento das transações, datas conferidas, conciliação exata e projeção coerente; não apenas menos exceções.
+
+### Evidência de testes
+
+139 testes aprovados, preservando os 131 anteriores e acrescentando oito. Casos novos: campos/parcelas sem inventar ano; total explícito após futuro; rótulo do total quebrado; fragmentos vinculados a uma decisão; vazamento de seção entre colunas; referências futuras em continuação; correção individual com data obrigatória e sem escrita; auditor protegido distinguindo conferência provisória de aprovação. Todas as fontes e referências desses testes são sintéticas.
+
+Pacote privado exclusivamente sintético regenerado com anterior preservado, 226 arquivos, 12 exemplos exatos e banco isolado. Cache **2d8fe75fdcfe8bea**. core.js/intelligence.js/pdf-reader.mjs/assets.js/sw.js comparados por HTTPS válido; preview apenas 127.0.0.1:43189, Serve privado e Funnel falso. Nenhum IndexedDB apagado. Testes físicos do iPhone e nova auditoria protegida continuam pendentes; main preservada e sem deploy público.
+
+## Itaú — integração do total estruturado à conciliação
+
+Auditoria real **jabu-audit-7** com hash confirmado: 90 lançamentos estruturados pendentes de data, 50 compras parceladas estruturadas, zero transações prontas, 167 exceções, zero candidatas fora da revisão e quatro de cinco referências conferidas. Total atual ausente, conciliação não concluída e projeção incompleta. Esses resultados permanecem como última evidência real; não são resultados do motor novo.
+
+Motor **jabu-audit-8**, SHA-256 **0e4e8ff900d22fc734029bb6550eff08a304c15303299971fb4dff7cacfba419**. Não houve nova leitura do PDF real pelo agente, pois a senha permanece no prompt local do proprietário. Nova auditoria protegida solicitada.
+
+### Diferenças de regras corrigidas
+
+O detector estrutural contava um rótulo atual seguido de valor, enquanto o parser financeiro exigia uma grafia restrita. Agora ambos usam inspectItauCurrentTotal, uma única função do núcleo para o rótulo explícito dos lançamentos atuais e seu valor. Aceita qualificadores descritivos e formatação monetária com valor único; rejeita múltiplos valores, números adicionais, referências de financiamento/limite ou contexto posterior ambíguo. Não assume que qualquer linha com preço é total.
+
+Totais da composição genérica da fatura não são misturados com total explicitamente rotulado dos lançamentos atuais. O rótulo explícito define a composição a conciliar; valores declarados de outra composição que divergirem continuam como exceções financeiras para conferência, sem alterar compras. Dois totais atuais conflitantes permanecem sem total selecionado; não é escolhido o que coincidir com a soma. Oferta continua bloqueada. Não foram criados lançamentos compensatórios.
+
+A incompatibilidade das regras foi comprovada com fontes sintéticas. A causa exata do bloqueio no documento real ainda depende do retorno de totalTrace: detecção, aceitação léxica, passagem ao resultado, bloqueio por oferta, ausência/multiplicidade de valor, contexto numérico/ambíguo, outros escopos e conflitos entre totais atuais. O rastreio contém apenas contagens fixas, nunca valores, fontes ou motivos arbitrários.
+
+### Datas, parcelas e exceções preservadas
+
+O mecanismo de candidatos pendentes não foi substituído. Parcela atual/total e valor são validados antes de preservar o candidato, mas nenhuma data/ano é inventada. Confirmação de período continua explícita, nunca baseada somente no vencimento. Totais e projeções de candidatos continuam provisórios e não autorizam salvar como confirmado.
+
+parcelValidation informa contagens de parcelas prontas, pendentes de data/seção e inválidas, além de possíveis candidatos duplicados (sem exclusão automática). reviewProfile classifica financialCoverage e unknownFormat por forma financeira e escopo; nenhuma descrição ou valor é emitido. Esses perfis orientam a revisão das exceções restantes, sem transformar limites, ofertas ou linhas suspeitas em compras.
+
+### Evidência de testes e próxima execução
+
+147 testes aprovados, preservando os 139 anteriores e acrescentando oito regressões. Há teste com 90 candidatos sintéticos e 50 parcelas: todos permanecem sem ano até confirmação de período; depois 90 itens ficam prontos e conciliam exatamente no cenário sintético. Outros casos cobrem detector/parser compartilhados, qualificadores, totais de escopos distintos, conflitos atuais, rejeições, moeda em centavos e passagem pelo PDF protegido até referência/conciliação/projeção. Os quatro campos financeiros anteriormente validados são cobertos novamente com referências inteiramente sintéticas.
+
+Executar o wrapper protegido com -CompareReferences, conferindo versão/hash. Acrescentar -ReviewPeriod somente com evidência suficiente para confirmar as datas originais. Retornar apenas JSON agregado incluindo totalTrace, itauStructure, structuralRecognition, parcelValidation, reviewProfile, referenceComparison e coverage. Sem confirmação das datas, zero itens prontos pode coexistir com candidatos estruturados preservados; não confundir essa situação com aprovação financeira.
+
+Nenhuma homologação real concluída. Exigir total atual correto, reconhecimento individual confiável, revisão das datas, conciliação exata, parcelas coerentes e cobertura preservada. Pacote privado exclusivamente sintético regenerado e anterior preservado: 226 arquivos/12 exemplos exatos, banco isolado, cache **a6a7a3ebb4618aeb**. Arquivos atualizados conferidos por HTTPS válido, somente 127.0.0.1:43189, Serve privado/Funnel falso. IndexedDB existente e main preservados; sem deploy público. Validação física no iPhone permanece pendente.
+
+## Evidência recebida do motor 8 e revisão assistida
+
+O proprietário confirmou cinco referências financeiras, total atual aceito, 90 candidatos aguardando data, 50 candidatos parcelados, 168 exceções, 52 escopos desconhecidos e zero candidatas fora da revisão. Conciliação e projeção ainda não aprovadas. Nenhum conteúdo real foi processado ou divulgado nesta etapa.
+
+Motor 9 acrescenta revisão explícita por grupos com prévia, exceções individuais e decisões de escopo reabríveis. Totais existentes preservados; futuros/pagamentos/informações classificados não geram compras. Salvamento bloqueado enquanto houver pendências, duplicidades, diferença atual ou conferência futura incompleta/divergente. 157 testes sintéticos aprovados. Procedimento físico e limites em REVISAO_ASSISTIDA_IPHONE.md; Itaú continua pendente de homologação.

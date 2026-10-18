@@ -1,0 +1,197 @@
+✔ artefatos locais: regras sincronizadas, manifest e todos os recursos de cache existem (90.8608ms)
+✔ service worker: somente GET local listado; ativação preserva caches de outros apps (93.1039ms)
+✔ service worker serve navegação inicial com query do cache canônico, sem cachear a query (2.7811ms)
+✔ demo gerada usa banco/canal/versionamento próprios sem copiar banco financeiro (738.2401ms)
+Warning: Cannot load "@napi-rs/canvas" package: "Error: Cannot find module '@napi-rs/canvas'
+Require stack:
+- <projeto>\vendor\pdf.mjs".
+Warning: Cannot polyfill `DOMMatrix`, rendering may be broken.
+Warning: Cannot polyfill `Path2D`, rendering may be broken.
+✔ motor identifica fontes sincronizadas e resolve imports independentemente da pasta corrente (419.9665ms)
+✔ fingerprint muda quando dependência muda e recusa core gerado divergente (915.713ms)
+✔ Itaú encaminha 17 candidatos antes excluídos para revisão sem criar compras (9.036ms)
+✔ diagnóstico posicional distingue sufixo parcelado de duas colunas candidatas sem emitir texto (4.4268ms)
+✔ diagnóstico conserva colunas sem evidência de separação e detecta ordem e total misturados (0.7274ms)
+✔ hook local de layout funciona em PDF protegido sem mudar o texto da importação normal (498.7596ms)
+✔ histograma de revisão usa apenas categorias fixas e não exporta motivo arbitrário (3.7337ms)
+✔ centavos: formatos, limites e entrada decimal HTML (6.9555ms)
+✔ CSV sintético Santander (10.2668ms)
+✔ CSV sintético Porto Bank (0.6384ms)
+✔ CSV sintético Mercado Pago (0.512ms)
+✔ CSV sintético Nubank (1.6701ms)
+✔ CSV sintético Itaú (2.8471ms)
+✔ CSV sintético Bradesco / Bradescard (6.8169ms)
+✔ não inventa data nem parcela; linhas inválidas expostas (3.2401ms)
+✔ texto PDF preserva descrição e reconhece pagamento/estorno (1.7942ms)
+✔ conciliação e deduplicação conservadora (1.6968ms)
+✔ projeção 3 meses com composição (1.6973ms)
+✔ projeção 6 meses com composição (0.3222ms)
+✔ projeção 12 meses com composição (0.2496ms)
+✔ projeção 24 meses com composição (0.1991ms)
+✔ parcela confirmada substitui estimativa de grupo e evita duplicar recorrência (0.3362ms)
+✔ pagamento ao banco excluído da projeção (0.1303ms)
+✔ grupo exige mesma cronologia, cartão, valor e quantidade (1.0221ms)
+✔ divisão em centavos e resíduos por maior resto (1.833ms)
+✔ demonstrativo isola pessoas e pagamentos; atribuição mais recente por sequência (0.6403ms)
+✔ atribuição parcelada só propaga em grupo confirmado (0.2118ms)
+✔ CSV protege fórmulas e aspas (0.2878ms)
+✔ backup autenticado: ida/volta, senha errada, adulteração (379.3548ms)
+✔ total explícito extraído sem inferir saldo ausente (0.5249ms)
+✔ recorrência antiga continua no horizonte e centavos não dependem da idade (0.3484ms)
+✔ associar nova parcela preserva grupo e seus vínculos anteriores (0.3854ms)
+✔ integração DOM: inicializa, cadastra categorias/cartões, arquiva sem apagar (720.8676ms)
+✔ integração DOM: dinheiro preserva decimal, família e CSV revisado (411.096ms)
+✔ migração real do esquema v4 para v5 preserva compras legadas (95.5674ms)
+✔ CSV Nubank sintético: aspas, separador explícito, moeda brasileira e pagamento negativo (6.6991ms)
+✔ valores ambíguos continuam inválidos e viram exceções editáveis (0.9429ms)
+✔ extração preserva células da mesma linha apesar de hasEOL e ordena coordenadas (12.404ms)
+✔ alertas informativos agrupados não removem registros financeiros suspeitos (2.8686ms)
+✔ total em célula seguinte é explícito; limite e total conflitante não são usados (0.4327ms)
+✔ correção individual valida centavos, sinal, data completa e parcelas (0.439ms)
+✔ interface corrige registro sem editar texto bruto e invalida aceite (689.7349ms)
+✔ exceção financeira bloqueia salvar mesmo conciliado e exclusão exige motivo (213.2132ms)
+✔ iPhone usa barra de status não translúcida e reserva espaço superior adicional (6.8592ms)
+✔ auditoria local sintética não altera o arquivo nem expõe fonte, caminho ou valores (285.0488ms)
+Warning: Cannot load "@napi-rs/canvas" package: "Error: Cannot find module '@napi-rs/canvas'
+Require stack:
+- <projeto>\vendor\pdf.mjs".
+Warning: Cannot polyfill `DOMMatrix`, rendering may be broken.
+Warning: Cannot polyfill `Path2D`, rendering may be broken.
+✔ Santander: CSV sintético com estorno/pagamento e conciliação (7.3942ms)
+✔ Santander: PDF binário sintético e revisão de cabeçalho desconhecido (419.1204ms)
+✔ Porto Bank: CSV sintético com estorno/pagamento e conciliação (1.1744ms)
+✔ Porto Bank: PDF binário sintético e revisão de cabeçalho desconhecido (40.5308ms)
+✔ Mercado Pago: CSV sintético com estorno/pagamento e conciliação (1.064ms)
+✔ Mercado Pago: PDF binário sintético e revisão de cabeçalho desconhecido (14.3325ms)
+✔ Nubank: CSV sintético com estorno/pagamento e conciliação (1.1606ms)
+✔ Nubank: PDF binário sintético e revisão de cabeçalho desconhecido (14.4548ms)
+✔ PDF sem ano mantém pendência em vez de inferir data (0.6277ms)
+✔ CSV rejeita cabeçalho ambíguo, campo extra e aspas malformadas (0.8813ms)
+✔ CSV preserva descrição multilinha, CRLF, aspas e ponto e vírgula (0.4747ms)
+✔ valor negativo vira crédito; palavra no meio do nome não vira pagamento (0.2282ms)
+✔ parcelas em outubro/dezembro estimam novembro e janeiro sem duplicar confirmados (1.0684ms)
+✔ nova divisão só propaga a partir da competência da origem (0.4702ms)
+✔ arredondamento conserva centavos em 306 divisões sintéticas (8.5609ms)
+✔ centavos perto do limite seguro não passam por arredondamento decimal (2.8976ms)
+✔ PDF acima do limite é recusado antes de ler o arquivo (0.848ms)
+Warning: Cannot load "@napi-rs/canvas" package: "Error: Cannot find module '@napi-rs/canvas'
+Require stack:
+- <projeto>\vendor\pdf.mjs".
+Warning: Cannot polyfill `DOMMatrix`, rendering may be broken.
+Warning: Cannot polyfill `Path2D`, rendering may be broken.
+Warning: getTextContent - ignoring errors during "GetTextContent: page 0" task: "Error: Worker task was terminated".
+✔ WebKit sem ReadableStream asyncIterator: reproduz dependência e corrige PDF/CSV/senha reais (564.9308ms)
+✔ CSV via FileReader sem File.arrayBuffer/File.text: revisão, conciliação e gravação (568.8235ms)
+✔ leitor getReader libera lock ao concluir e cancela em falha (9.325ms)
+✔ falha de leitura local é segura e não reflete conteúdo privado (1.313ms)
+Warning: Cannot load "@napi-rs/canvas" package: "Error: Cannot find module '@napi-rs/canvas'
+Require stack:
+- <projeto>\vendor\pdf.mjs".
+Warning: Cannot polyfill `DOMMatrix`, rendering may be broken.
+Warning: Cannot polyfill `Path2D`, rendering may be broken.
+✔ PDF protegido via FileReader: extrator real e revisão sem gravar senha (338.5668ms)
+✔ homologação: carga fictícia preserva dados existentes e backup válido (784.4387ms)
+✔ homologação: recusa carga no banco principal (218.9228ms)
+✔ pacote HTTPS: allowlist, banco próprio, cache completo e recusa sobrescrita (1316.2691ms)
+✔ Itaú: período explícito resolve virada de ano, parcelas, créditos e pagamentos em centavos (16.8416ms)
+✔ Itaú: vencimento e competência isolados nunca fornecem o ano da compra (2.4529ms)
+✔ Itaú: datas fora do ciclo, colunas mescladas e data adicional permanecem exceções (0.7214ms)
+✔ Itaú: reconstrução limitada conserva fontes e não cruza cabeçalhos ou totais (3.3959ms)
+✔ Itaú: total em resumo ou célula seguinte é reconhecido; oferta, limite e conflito não conciliam (1.5585ms)
+✔ Itaú: parcela inválida não é descartada; crédito com sufixo não projeta compras (3.7794ms)
+✔ Itaú: conciliação não substitui verificação de duplicidades (5.8146ms)
+✔ Itaú: auditor protegido integra ciclo e parcelas sem expor conteúdo ou senha (472.505ms)
+✔ Itaú estrutural: células separadas fora de ordem preservam compra, parcela e valor (21.0527ms)
+✔ Itaú estrutural: dois cabeçalhos delimitam colunas e impedem mistura de ofertas com compras (1.6836ms)
+✔ Itaú estrutural: separa duas transações completas sem confundir parcela com nova coluna (0.7113ms)
+✔ Itaú estrutural: total com moeda separada e texto lateral; múltiplos valores continuam ambíguos (0.9853ms)
+✔ período confirmado é validado e datas com dois anos possíveis permanecem em revisão (0.7324ms)
+✔ interface aplica período somente após confirmação e invalida aceite ao editar datas (636.6519ms)
+✔ auditoria protegida compara período confirmado sem expor senha ou datas (313.2395ms)
+✔ PDF binário sintético: PDF.js extrai células posicionadas e o fluxo Itaú concilia (21.0692ms)
+✔ backup valida período confirmado e preserva metadados sem permitir datas impossíveis (133.9317ms)
+✔ CLI protegido recebe segredo e período somente por stdin e não os devolve (551.4842ms)
+✔ diagnóstico Itaú separa candidatos a parcelas de possível sobreposição sem completar datas (3.7209ms)
+✔ diagnóstico distingue total inline, na linha seguinte e sem valor adjacente (1.2291ms)
+✔ diagnóstico enumera apenas seções conhecidas e não exporta campos arbitrários (1.3536ms)
+✔ Itaú conserva campos financeiros e parcelas sem atribuir ano ou criar transação pronta (8.9392ms)
+✔ total atual explícito conserva escopo após futuro; limite e oferta não fornecem total (7.7671ms)
+✔ rótulo do total atual quebrado em baselines próximos é reunido sem buscar limite (8.1981ms)
+✔ fragmentos financeiros de candidato pendente contam uma revisão e todas as fontes (0.8022ms)
+✔ escopo posicional impede vazamento do futuro de uma coluna para tabela atual da outra (2.4047ms)
+✔ referências futuras explícitas continuam reconhecidas em continuação sem cabeçalho (0.7361ms)
+✔ correção individual sugere campos mas exige data válida e não grava automaticamente (682.3925ms)
+✔ auditoria distingue conciliação numérica provisória de aprovação com datas confirmadas (335.849ms)
+✔ Itaú: total atual não subtrai pagamento anterior e resumo futuro não duplica compras (14.3256ms)
+✔ Itaú: mesmo sem ano o total atual e resumos são reconhecidos, compras ficam em revisão (3.183ms)
+✔ Itaú: detalhes futuros e limite nunca viram compras nem desaparecem da revisão (2.6238ms)
+✔ Itaú: resumo futuro e pagamentos conflitantes exigem revisão; nenhum ajuste automático (1.4974ms)
+✔ Itaú: primeiro separa colunas; continuação da descrição não recebe compra da outra coluna (13.4142ms)
+✔ Itaú: células de descrição e valor em linhas adicionais são associadas sem cruzar cabeçalho (1.4448ms)
+✔ Itaú: âncoras repetidas de data detectam duas colunas mesmo sem cabeçalho tabular (1.3396ms)
+✔ auditor protegido compara referências privadas e projeção sem expor valores (425.6668ms)
+✔ total estruturado e financeiro compartilham leitura de qualificador sem perda de centavos (10.4417ms)
+✔ rastreio identifica múltiplos valores, contexto numérico, financiamento e seção de oferta (3.7665ms)
+✔ total atual tem escopo próprio; total de outra composição exige decisão sem compensação (5.8921ms)
+✔ dois totais atuais conflitantes não selecionam o valor que coincidir com as compras (1.4303ms)
+✔ preserva noventa candidatos e cinquenta parcelas válidas até confirmação do período (14.7188ms)
+✔ auditoria protegida encaminha total para referências, conciliação e projeção preservando os demais (472.036ms)
+✔ total formatado como moeda brasileira agrupada é validado sem arredondamento (0.6618ms)
+✔ histograma de exceções não descarta linhas nem inclui conteúdo em suas categorias (51.2518ms)
+Warning: Cannot load "@napi-rs/canvas" package: "Error: Cannot find module '@napi-rs/canvas'
+Require stack:
+- <projeto>\vendor\pdf.mjs".
+Warning: Cannot polyfill `DOMMatrix`, rendering may be broken.
+Warning: Cannot polyfill `Path2D`, rendering may be broken.
+✔ Itaú: adaptador CSV e PDF específico, total e ofertas (430.163ms)
+✔ Bradesco / Bradescard: adaptador CSV e PDF específico, total e ofertas (48.3995ms)
+✔ Bradescard: parênteses e resumo não criam parcelas duplicadas (4.0638ms)
+✔ novos adaptadores recusam ano ausente sem inventá-lo (1.8964ms)
+✔ Bradesco: totais conflitantes e resumo futuro divergente permanecem incertos (0.5651ms)
+✔ PDF criptografado sintético: segredo aleatório em memória, erro seguro e sucesso (49.0598ms)
+✔ detecção conservadora de instituição e compatibilidade com seis bancos (0.7593ms)
+✔ Bradesco: persistência, divisão familiar e restauração preservam centavos e metadados (179.8203ms)
+✔ Jabu: telas, navegação e filtros de cartão preservam dados (771.5081ms)
+✔ Itaú na interface: senha temporária descartada, revisão e duplicidade atômica (368.1788ms)
+✔ família: resumo individual exibe quantidades, recebimentos e saldo (160.5944ms)
+✔ tokens de texto atendem contraste AA e layout define contenção mobile (2.3264ms)
+Warning: Cannot load "@napi-rs/canvas" package: "Error: Cannot find module '@napi-rs/canvas'
+Require stack:
+- <projeto>\vendor\pdf.mjs".
+Warning: Cannot polyfill `DOMMatrix`, rendering may be broken.
+Warning: Cannot polyfill `Path2D`, rendering may be broken.
+Warning: Indexing all PDF objects
+✔ PDF real sintético: extração local e reconhecimento (447.2843ms)
+✔ PDF inválido falha explicitamente (5.2412ms)
+✔ grupo confirma apenas selecionados, resolve virada de ano e mantém exceção individual fora do período (16.1351ms)
+✔ escopos futuros, pagamentos e informações exigem motivo e não produzem compra (2.769ms)
+✔ prévia não altera lançamentos e desmarcar exceção preserva a pendência (699.5247ms)
+✔ alterar período ou seleção invalida prévia e impede aplicação obsoleta (203.4769ms)
+✔ classificação de escopo preserva cinco totais e pode ser reaberta sem gerar parcelas (161.8985ms)
+✔ lançamento de grupo aceita ajuste individual e reabertura sem duplicar origem (166.6667ms)
+✔ conciliação após revisão exige zero diferença, zero pendências e parcelas coerentes (3.4355ms)
+✔ duplicidade e origem resolvida sem item vinculado bloqueiam confirmação (0.4541ms)
+✔ salvamento final é atômico após revisão e registra decisões sem tokens temporários (153.0149ms)
+✔ exemplo assistido existe só na homologação e abre prévia sem alterar armazenamento (105.0935ms)
+✔ envelope rejeita bytes inválidos e metadados incompletos antes da derivação (75.1503ms)
+✔ backup recusa dados financeiros e eventos adulterados no staging (5.1801ms)
+✔ compartilhamento exige segundo toque, conserva ativação e isola terceiros (706.5736ms)
+✔ cancelar seletor de compartilhamento não vira falha nem envio adicional (282.0158ms)
+✔ trava oculta antes de aguardar banco, limpa senha/impressão e bloqueia por inatividade (414.9907ms)
+✔ editar fonte invalida revisão e impede salvar dados antigos (78.058ms)
+✔ backup grande falha antes de gerar arquivo que não poderia ser restaurado (16.3386ms)
+✔ importação e persistência com commit completo (19.5457ms)
+✔ duplicidade concorrente e repetida não gera compras órfãs (3.7799ms)
+✔ total divergente cancela toda a transação (1.4187ms)
+✔ divisão em lote atômica e histórico imutável ordenado (5.4132ms)
+✔ backup e restauração preservam anexos e não sobrescrevem em conflito (6.669ms)
+✔ restauração aborta também inclusões de outras tabelas em conflito (3.0446ms)
+✔ persistência continua após fechar e reabrir o banco (1.9472ms)
+ℹ tests 157
+ℹ suites 0
+ℹ pass 157
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 7714.4073
