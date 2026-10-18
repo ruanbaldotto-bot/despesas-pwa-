@@ -3,3 +3,5 @@
 @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;animation:none!important;transition:none!important}}
 @media print{body.printing-statement>*{display:none!important}body.printing-statement>#printOutput{display:block!important;color:var(--mata);background:var(--surface);font-size:12pt}body.screen-locked>*{display:none!important}body.screen-locked>.lock-overlay{display:block!important;position:static;background:var(--surface);color:var(--mata)}body.screen-locked #printOutput{display:none!important}}
 .hero small{color:var(--salvia)}
+
+@media(max-width:760px){#familySummary .person-summary{display:grid;grid-template-columns:40px minmax(0,1fr);align-items:start}#familySummary .person-summary button{grid-column:2;margin-left:0;justify-self:start}#familySummary .grow{min-width:0}#familySummary .sub{display:block;margin-top:var(--s2)}.metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.bank-heading{flex-wrap:wrap}.bank-heading .grow{min-width:0;overflow-wrap:anywhere}.bank-heading>.chip{margin-left:54px}}
