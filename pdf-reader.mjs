@@ -18,6 +18,14 @@ export async function readPageTextContent(page) {
     try { if (!done) await reader.cancel(); } finally { reader.releaseLock(); }
   }
 }
+export function textRows(items) {
+  const rows=[];
+  for (const item of items.filter(i=>typeof i.str==='string'&&i.str.trim()).sort((a,b)=>b.transform[5]-a.transform[5]||a.transform[4]-b.transform[4])) {
+    const y=item.transform[5],last=rows[rows.length-1];
+    if(last&&Math.abs(last.y-y)<=2)last.items.push(item);else rows.push({y,items:[item]});
+  }
+  return rows.map(row=>row.items.sort((a,b)=>a.transform[4]-b.transform[4]).map(i=>i.str).join(' '));
+}
 export async function readPDF(file, options = {}) {
   const password = options.password || undefined;
   delete options.password;
@@ -49,26 +57,12 @@ export async function readPDF(file, options = {}) {
     for (let p = 1; p <= pdf.numPages; p++) {
       const page = await pdf.getPage(p);
       const content = pdf.isPureXfa ? await page.getTextContent() : await readPageTextContent(page);
-      let previous = null;
-      let line = '';
       for (const item of content.items) {
-        if (!('str' in item)) continue;
+        if (typeof item.str !== 'string') continue;
         characters += item.str.length;
         if (characters > 2_000_000) throw new Error('Texto do PDF excede o limite de leitura.');
-        const y = Math.round(item.transform[5]);
-        if (previous !== null && Math.abs(y - previous) > 3) {
-          lines.push(line);
-          line = '';
-        }
-        line += item.str + ' ';
-        previous = y;
-        if (item.hasEOL) {
-          lines.push(line);
-          line = '';
-          previous = null;
-        }
       }
-      if (line) lines.push(line);
+      lines.push(...textRows(content.items));
       page.cleanup();
     }
     const text = lines.join('\n');

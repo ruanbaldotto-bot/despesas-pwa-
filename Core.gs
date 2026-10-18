@@ -3,7 +3,11 @@
 const fail=m=>{throw new Error(m);};
 function integer(n){if(!Number.isSafeInteger(n))fail('Valor fora do intervalo seguro.');return n;}
 function money(v){
- let s=String(v).trim().replace(/^R\$\s*/,'');
+ let s=String(v).replace(/[\u00a0\u202f]/g,' ').replace(/\u2212/g,'-').trim();
+ const parentheses=/^\(.*\)$/.test(s);if(parentheses)s=s.slice(1,-1).trim();
+ s=s.replace(/^(-?)\s*R\$\s*/i,(_,sign)=>sign).replace(/^-\s+(?=\d)/,'-');
+ if(parentheses){if(s.startsWith('-'))fail('Sinal monetário ambíguo.');s='-'+s;}
+ if(/^-?\d{1,3}(?: \d{3})+(?:,\d{1,2})?$/.test(s))s=s.replaceAll(' ','');
  if(s.includes(',')){if(!/^-?(?:\d+|\d{1,3}(?:\.\d{3})+),\d{1,2}$/.test(s))fail('Valor monetário inválido.');s=s.replaceAll('.','').replace(',','.');}
  if(!/^-?\d+(?:\.\d{1,2})?$/.test(s))fail('Use no máximo duas casas decimais.');
  const neg=s.startsWith('-');s=s.replace('-','');const [a,b='']=s.split('.');return integer(Number((neg?-1n:1n)*(BigInt(a)*100n+BigInt(b.padEnd(2,'0')))));
@@ -25,9 +29,10 @@ function split(total,parts,percent=false){
  return rows.map(({personId,amountCents})=>({personId,amountCents:sign*amountCents}));
 }
 function csvRows(text){
+ text=String(text).replace(/^\uFEFF/,'');const directive=text.match(/^sep=([;,\t])\r?\n/i);if(directive)text=text.slice(directive[0].length);
  const first=text.split(/\r?\n/)[0];let inside=false,commas=0,semicolons=0;
  for(const c of first){if(c==='"')inside=!inside;else if(!inside){if(c===',')commas++;if(c===';')semicolons++;}}
- const sep=semicolons>commas?';':',';
+ const sep=directive?directive[1]:semicolons>commas?';':',';
  const rows=[];let row=[],cell='',quote=false,closed=false;
  function finishCell(){row.push(cell);cell='';closed=false;}
  function finishRow(){finishCell();rows.push(row);row=[];}
@@ -37,7 +42,7 @@ function csvRows(text){
   if(c===sep){finishCell();continue;}
   if(c==='\n'||c==='\r'){if(c==='\r'&&text[i+1]==='\n')i++;finishRow();continue;}
   if(closed){if(c===' '||c==='\t')continue;fail('Texto fora das aspas do campo CSV.');}
-  if(c==='"'){if(cell.length)fail('Aspas fora do início do campo CSV.');quote=true;continue;}
+  if(c==='"'){if(cell.trim().length)fail('Aspas fora do início do campo CSV.');cell='';quote=true;continue;}
   cell+=c;
  }
  if(quote)fail('CSV com aspas incompletas.');if(cell||row.length||closed)finishRow();return rows;
@@ -53,7 +58,9 @@ const adapters={
 };
 function canonicalBank(bank){if(['Bradesco','Bradescard'].includes(bank))return 'Bradesco / Bradescard';if(bank==='Itau')return 'Itaú';return bank;}
 function detectBank(text){const found=new Set();for(const line of text.split(/\r?\n/).slice(0,20)){const s=normalize(line);if(/^(?:banco )?itau(?:\b|$)/.test(s))found.add('Itaú');if(/^(?:banco )?(?:bradesco|bradescard)(?:\b|$)/.test(s))found.add('Bradesco / Bradescard');for(const bank of ['Santander','Porto Bank','Mercado Pago','Nubank'])if(s.startsWith(normalize(bank)))found.add(bank);}return found.size===1?[...found][0]:null;}
+function ambiguousPDFRow_(line){return /[.,]\d{2}\s+(?:\d{2}\/(?:0[1-9]|1[0-2])(?:\/\d{4})?|\d{4}-\d{2}-\d{2})\s+\S/.test(line);}
 function datedBankRow(line){
+ if(ambiguousPDFRow_(line))fail('Possíveis transações de colunas diferentes na mesma linha; separar e revisar.');
  const m=line.match(/^\s*(\d{4}-\d{2}-\d{2}|\d{2}\/\d{2}(?:\/\d{4})?)\s+(.+?)\s+(?:R\$\s*)?(-?[\d.]+,\d{2})\s*([DC-])?\s*$/i);
  if(!m)return null;if(/^\d{2}\/\d{2}$/.test(m[1]))fail('Data sem ano: confira e complete a data no texto de revisão.');
  let value=money(m[3]);if(m[4]&&/C|-/.test(m[4].toUpperCase()))value=-Math.abs(value);
@@ -96,18 +103,49 @@ function readBradesco(text){
 }
 function parseDate(s){s=String(s).trim();if(/^\d{2}\/\d{2}\/\d{4}$/.test(s))s=s.split('/').reverse().join('-');return date(s);}
 function installment(desc){const m=desc.match(/(?:\(\s*)?(?:parcela\s*)?(\d{1,3})\s*(?:\/| de )\s*(\d{1,3})\s*\)?\s*$/i);if(!m)return {};const n=+m[1],t=+m[2];if(!n||n>t)fail('Parcelamento inválido.');const result={installmentNumber:n,installmentsTotal:t};validateInstallments(result);return result;}
-function extractTotal(text){const values=[];for(const line of text.split(/\r?\n/)){const m=normalize(line).match(/^(?:total da fatura|total a pagar|valor total da fatura|total liquido)\s*[:\-]?\s*(?:r\$\s*)?(-?[\d.]+,\d{2})$/);if(m)values.push(money(m[1]));}const unique=[...new Set(values)];return unique.length===1?unique[0]:null;}
-function parse(text,bank,format){
- bank=canonicalBank(bank);const adapter=adapters[bank];if(!adapter)fail('Banco não suportado.');if(format!=='csv'&&adapter.readPDF)return adapter.readPDF(text);const items=[],issues=[];
+function extractTotal(text){
+ const values=[],lines=text.split(/\r?\n/).map(normalize);
+ const label='(?:total da fatura|total desta fatura|total a pagar|valor total da fatura|valor total desta fatura|valor desta fatura|total liquido)';
+ const inline=new RegExp('^'+label+'\\s*[:\\-]?\\s*(?:r\\$\\s*)?(-?[\\d.]+,\\d{2})$');
+ const onlyLabel=new RegExp('^'+label+'\\s*:?$');
+ for(let n=0;n<lines.length;n++){const m=lines[n].match(inline);if(m)values.push(money(m[1]));else if(onlyLabel.test(lines[n])){const next=(lines[n+1]||'').match(/^(?:r\$\s*)?(-?[\d.]+,\d{2})$/);if(next)values.push(money(next[1]));}}
+ const unique=[...new Set(values)];return unique.length===1?unique[0]:null;
+}
+function parseBase(text,bank,format){
+ bank=canonicalBank(bank);const adapter=adapters[bank];if(!adapter)fail('Banco não suportado.');if(format!=='csv'&&adapter.readPDF)return adapter.readPDF(text);const items=[],issues=[],exceptions=[];
  if(format==='csv'){
  const rows=csvRows(text.replace(/^\uFEFF/,''));const heads=(rows.shift()||[]).map(normalize);
  const col=names=>{const found=heads.map((h,i)=>names.includes(h)?i:-1).filter(i=>i>=0);if(found.length>1)fail('Cabeçalho ambíguo: há colunas repetidas para o mesmo campo.');return found[0]??-1;};const di=col(adapter.date),ni=col(adapter.desc),vi=col(adapter.value);
  if([di,ni,vi].includes(-1))fail('Cabeçalho não reconhecido. Use data, descricao, valor; datas com ano.');
- rows.forEach((r,i)=>{if(r.every(v=>!v.trim()))return;try{if(r.length!==heads.length)fail('Quantidade de colunas divergente do cabeçalho.');const note=r[ni]?.trim();if(!note)fail('Descrição ausente.');items.push(make(parseDate(r[di]),note,money(r[vi])));}catch(e){issues.push(`Linha ${i+2}: ${e.message}`);}});
+ rows.forEach((r,i)=>{if(r.every(v=>!v.trim()))return;try{if(r.length!==heads.length)fail('Quantidade de colunas divergente do cabeçalho.');const note=r[ni]?.trim();if(!note)fail('Descrição ausente.');items.push(make(parseDate(r[di]),note,money(r[vi])));}catch(e){issues.push(`Linha ${i+2}: ${e.message}`);exceptions.push({line:i+2,source:r.join(' | '),reason:e.message,resolved:false});}});
  }else{
- text.split(/\r?\n/).forEach((line,i)=>{line=line.replace(/\u00a0/g,' ');if(!line.trim()||extractTotal(line)!==null)return;const m=line.match(/^\s*(\d{2}\/\d{2}\/\d{4}|\d{4}-\d{2}-\d{2})\s+(.+?)\s+(?:R\$\s*)?(-?[\d.]+,\d{2})\s*$/);if(!m){issues.push(`Linha ${i+1} não reconhecida: revise no documento.`);return;}try{items.push(make(parseDate(m[1]),m[2],money(m[3])));}catch(e){issues.push(`Linha ${i+1}: ${e.message}`);}});
+ text.split(/\r?\n/).forEach((line,i)=>{line=line.replace(/\u00a0/g,' ');if(!line.trim()||extractTotal(line)!==null)return;if(ambiguousPDFRow_(line)){issues.push(`Linha ${i+1}: possíveis transações de colunas diferentes; separar e revisar.`);return;}const m=line.match(/^\s*(\d{2}\/\d{2}\/\d{4}|\d{4}-\d{2}-\d{2})\s+(.+?)\s+(?:R\$\s*)?(-?[\d.]+,\d{2})\s*$/);if(!m){issues.push(`Linha ${i+1} não reconhecida: revise no documento.`);return;}try{items.push(make(parseDate(m[1]),m[2],money(m[3])));}catch(e){issues.push(`Linha ${i+1}: ${e.message}`);}});
  }
- return {items,issues,reportedTotalCents:format==='csv'?null:extractTotal(text)};
+ return {items,issues,reportedTotalCents:format==='csv'?null:extractTotal(text),diagnostics:{exceptions,informational:0,unresolved:exceptions.length}};
+}
+function pdfDiagnostics(text,result){
+ const lines=text.split(/\r?\n/),exceptions=[];let informational=0;
+ const retained=[];
+ for(const issue of result.issues){const number=issue.match(/^Linha (\d+)/);if(!number){retained.push(issue);continue;}
+ const index=Number(number[1])-1,line=lines[index]||'',n=normalize(line);
+ const obviousInfo=/^(?:total|saldo|limite|vencimento|fechamento|encargos|juros|cet|iof|taxa|pagamento minimo|codigo|cnpj|cpf|pagina|central|sac|ouvidoria|oferta|opcoes|simulacao|proxima fatura|demais parcelas|valor total)/.test(n);
+ const dated=/^\s*(?:\d{4}-\d{2}-\d{2}|\d{1,2}[\/.-]\d{2}|\d{1,2}\s+[a-zç]{3})(?:\b|\s)/i.test(line);
+ const monetary=/^\s*(?:R\$\s*)?-?[\d.,]+[,.]\d{2}\s*[DC-]?\s*$/i.test(line)||/(?:R\$|[\d.]+,\d{2})\s*[DC-]?\s*$/i.test(line);
+ const excluded=/oferta|resumo não virou|item em seção/.test(issue);
+ if(!obviousInfo&&!excluded&&(dated||monetary))exceptions.push({line:index+1,source:line,reason:issue,resolved:false});else informational++;
+ }
+ const issues=[...exceptions.map(e=>e.reason),...retained];if(informational)issues.push(informational+' linhas informativas ou excluídas agrupadas; confira o documento (inclui ofertas quando presentes).');
+ return {...result,issues,diagnostics:{exceptions,informational,unresolved:exceptions.length}};
+}
+function parse(text,bank,format){const result=parseBase(text,bank,format);if(format!=='csv'&&result.reportedTotalCents==null&&!result.issues.some(s=>/conflitantes/.test(s)))result.reportedTotalCents=extractTotal(text);return format==='csv'?result:pdfDiagnostics(text,result);}
+function reviewItem(fields){
+ const item={date:date(fields.date),note:String(fields.note||'').trim(),kind:fields.kind,amountCents:money(fields.value)};
+ if(!item.note||!['purchase','refund','bankPayment'].includes(item.kind))fail('Informe descrição e tipo válidos.');
+ if(item.kind!=='purchase')item.amountCents=-Math.abs(item.amountCents);
+ if(item.kind==='purchase'&&item.amountCents<0)fail('Compra não pode ter valor negativo; selecione crédito/estorno.');
+ if(fields.installmentNumber!==''&&fields.installmentNumber!=null)item.installmentNumber=Number(fields.installmentNumber);
+ if(fields.installmentsTotal!==''&&fields.installmentsTotal!=null)item.installmentsTotal=Number(fields.installmentsTotal);
+ validateInstallments(item);return item;
 }
 function make(dateValue,note,value){const label=normalize(note);const kind=/^pagamento(?: recebido| efetuado| de fatura| da fatura)?(?:\s|$)/.test(label)?'bankPayment':/^(?:estorno|credito)(?:\s|$)/.test(label)||value<0?'refund':'purchase';return {date:dateValue,note,amountCents:kind==='purchase'?value:-Math.abs(value),kind,...installment(note)};}
 function validateInstallments(e){const n=e.installmentNumber,t=e.installmentsTotal;if(n==null&&t==null)return;if(!Number.isInteger(n)||!Number.isInteger(t)||n<1||t<n||t>120)fail('Parcelamento inválido: use parcela e total de 1 a 120.');}
@@ -139,6 +177,6 @@ function validBytes(value,min,max){return Array.isArray(value)&&value.length>=mi
 async function key(password,salt,usage){if(!globalThis.crypto?.subtle)fail('Criptografia indisponível. Use navegador compatível e HTTPS.');if(password.length<12)fail('Use uma senha com pelo menos 12 caracteres.');const material=await crypto.subtle.importKey('raw',new TextEncoder().encode(password),'PBKDF2',false,['deriveKey']);return crypto.subtle.deriveKey({name:'PBKDF2',salt,iterations:310000,hash:'SHA-256'},material,{name:'AES-GCM',length:256},false,[usage]);}
 async function encrypt(data,password){if(!globalThis.crypto?.subtle)fail('Criptografia indisponível. Use navegador compatível e HTTPS.');const payload=new TextEncoder().encode(JSON.stringify(data));if(payload.byteLength>10*1024*1024)fail('Backup excede 10 MB de dados serializados. Preserve os anexos originais e revise o tamanho antes de exportar.');const salt=crypto.getRandomValues(new Uint8Array(16)),iv=crypto.getRandomValues(new Uint8Array(12));const k=await key(password,salt,'encrypt');const body=await crypto.subtle.encrypt({name:'AES-GCM',iv},k,payload);return {format:'fatura-backup-v1',salt:[...salt],iv:[...iv],body:[...new Uint8Array(body)]};}
 async function decrypt(envelope,password){if(!envelope||envelope.format!=='fatura-backup-v1'||!validBytes(envelope.salt,16,16)||!validBytes(envelope.iv,12,12)||!validBytes(envelope.body,16,16*1024*1024))fail('Backup inválido.');const k=await key(password,new Uint8Array(envelope.salt),'decrypt');const body=await crypto.subtle.decrypt({name:'AES-GCM',iv:new Uint8Array(envelope.iv)},k,new Uint8Array(envelope.body));return JSON.parse(new TextDecoder().decode(body));}
-const api={money,cents,month,date,addMonth,split,validateGroup,groupMembers,csvRows,adapters,canonicalBank,detectBank,extractTotal,parse,installment,validateInstallments,fingerprint,reconcile,validateImport,project,allocations,statement,csvCell,encrypt,decrypt};
+const api={reviewItem,money,cents,month,date,addMonth,split,validateGroup,groupMembers,csvRows,adapters,canonicalBank,detectBank,extractTotal,parse,installment,validateInstallments,fingerprint,reconcile,validateImport,project,allocations,statement,csvCell,encrypt,decrypt};
 if(typeof module!=='undefined')module.exports=api;else root.Fatura=api;
 })(globalThis);
