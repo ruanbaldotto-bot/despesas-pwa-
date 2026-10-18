@@ -103,7 +103,22 @@ function itauRow_(line,cycle,explicitSection){
  }
  row.date=parseDate(resolved);return row;
 }
+// Same lexical contract for structural detection and the financial current-total parser.
+function inspectItauCurrentTotal(line){
+ const n=normalize(String(line)).replace(/[\u00a0\u202f]/g,' '),label=n.match(/^total (?:dos |de )?lancamentos atuais\b/);
+ if(!label)return {detected:false,reason:'notCurrentTotal',valueCents:null};
+ const tail=n.slice(label[0].length),matches=[...tail.matchAll(/[-−]?\s*(?:\d{1,3}(?:[. ]\d{3})+|\d+),\d{2}/g)];
+ if(!matches.length)return {detected:true,reason:'missingAmount',valueCents:null};
+ if(matches.length!==1)return {detected:true,reason:'multipleAmounts',valueCents:null};
+ const m=matches[0],outside=tail.slice(0,m.index)+' '+tail.slice(m.index+m[0].length);
+ if(/\d/.test(outside))return {detected:true,reason:'numericContext',valueCents:null};
+ if(/\b(?:limite|financiamento|parcelamento|oferta|simulacao|minimo|estimativa|futuro)\b/.test(outside))return {detected:true,reason:'ambiguousContext',valueCents:null};
+ // Currency, descriptive qualifiers and harmless punctuation can surround a unique value.
+ if(tail.slice(m.index+m[0].length).replace(/[\s().,:;=+\-]/g,''))return {detected:true,reason:'trailingContext',valueCents:null};
+ try{return {detected:true,reason:'accepted',valueCents:money(m[0].trim().replace('−','-'))};}catch{return {detected:true,reason:'invalidMoney',valueCents:null};}
+}
 function itauTotal_(line){
+ const current=inspectItauCurrentTotal(line);if(current.detected&&current.valueCents!=null)return {value:current.valueCents,label:false};
  const n=normalize(line),label='(?:total (?:desta |da )?fatura|valor total (?:desta |da )?fatura|total a pagar|total (?:dos |de )?lancamentos atuais)';
  const m=n.match(new RegExp('^'+label+'\\s*(?:\\(r\\$\\))?\\s*[:=\\-]?\\s*(?:r\\$\\s*)?(-?[\\d.]+,\\d{2})\\s*$'));
  return {value:m?money(m[1]):null,label:new RegExp('^'+label+'\\s*(?:\\(r\\$\\))?\\s*[:=]?\\s*$').test(n)};
@@ -111,7 +126,7 @@ function itauTotal_(line){
 function readItau(text,options={}){
  const items=[],issues=[],totals=[],metadata={},lines=text.split(/\r?\n/).map(s=>s.replace(/\u00a0/g,' ').trim()),cycle=options.reviewPeriod?reviewPeriod_(options.reviewPeriod):itauCycle_(lines);let section='transactions',explicitSection=false;
  metadata.dateContext=cycle?(options.reviewPeriod?'período confirmado na revisão':'período explícito'):'ausente ou ambíguo';if(options.reviewPeriod)metadata.reviewPeriod={from:cycle.from,to:cycle.to};
- const consumed=new Set(),recognizedSources=new Set(),summarySources=new Set(),futureReferences={},futureLines=new Set(),previousPayments=[],reportedPreviousPayments=[],previousLines=new Set(),pendingDateItems=[];let previousConflict=false;
+ const consumed=new Set(),recognizedSources=new Set(),summarySources=new Set(),futureReferences={},futureLines=new Set(),previousPayments=[],reportedPreviousPayments=[],previousLines=new Set(),pendingDateItems=[],declaredTotalLines=[],currentTotals=[],totalTrace={detected:0,lexicalAccepted:0,accepted:0,blockedOffer:0,missingAmount:0,multipleAmounts:0,numericContext:0,ambiguousContext:0,trailingContext:0,invalidMoney:0,otherScopeTotals:0,conflictingCurrentTotals:0};let previousConflict=false;
  lines.forEach((line,i)=>{const n=normalize(line);if(!line||consumed.has(i))return;let pendingUsed=[];
   if(Array.isArray(options.layoutSections)&&options.layoutSections.length===lines.length){const scope=options.layoutSections[i];if(['current','previousPayments','future','offer','summary','unknown'].includes(scope)){section=scope==='current'?'transactions':scope;explicitSection=scope==='current';}}
   if(/^(?:opcoes de parcelamento|parcelamento da fatura|simulacao|oferta de parcelamento)\b/.test(n)){section='offer';explicitSection=false;issues.push('Linha '+(i+1)+': oferta de financiamento excluída das compras.');return;}
@@ -119,6 +134,7 @@ function readItau(text,options={}){
   if(/^(?:pagamentos efetuados|pagamentos anteriores)(?:\s*\(continuacao\))?$/.test(n)){section='previousPayments';explicitSection=false;return;}
   if(/^(?:lancamentos(?: atuais|: compras e saques|: produtos e servicos)?|compras e saques|pagamentos e creditos|transacoes do cartao)(?:\s*\(continuacao\))?$/.test(n)){section='transactions';explicitSection=true;return;}
   if(/^resumo da fatura$/.test(n)){section='summary';explicitSection=false;return;}
+  const currentInspection=inspectItauCurrentTotal(line);if(currentInspection.detected){totalTrace.detected++;if(currentInspection.reason==='accepted')totalTrace.lexicalAccepted++;else if(currentInspection.reason in totalTrace)totalTrace[currentInspection.reason]++;if(section==='offer')totalTrace.blockedOffer++;}
   try{
    if(section==='future'||section==='unknown'&&/^(?:proxima fatura(?: parcelada)?|demais (?:faturas|parcelas)(?: parceladas| futuras)?|total futuro|total (?:para |das )proximas faturas)\b/.test(n)){
     const f=n.match(/^(proxima fatura(?: parcelada)?|demais (?:faturas|parcelas)(?: parceladas| futuras)?|total futuro|total (?:para |das )?proximas faturas)\s*[:=]?\s*(?:r\$\s*)?([\d.]+,\d{2})$/);
@@ -132,8 +148,8 @@ function readItau(text,options={}){
    }
    if(section!=='offer'&&(section!=='future'&&section!=='previousPayments'||/^total (?:dos |de )?lancamentos atuais\b/.test(n))){
 
-    const total=itauTotal_(line);if((total.label||total.value!=null)&&/^total (?:dos |de )?lancamentos atuais/.test(n))metadata.totalScope='currentCharges';if(total.value!=null){totals.push(total.value);summarySources.add(i);if(/^total (?:dos |de )?lancamentos atuais/.test(n))metadata.totalScope='currentCharges';return;}
-    if(total.label){const next=(lines[i+1]||'').match(/^(?:R\$\s*)?(-?[\d.]+,\d{2})$/i);if(next){totals.push(money(next[1]));consumed.add(i+1);summarySources.add(i);summarySources.add(i+1);}else issues.push('Linha '+(i+1)+': referência ao total sem valor adjacente; conferir.');return;}
+    const total=itauTotal_(line);if((total.label||total.value!=null)&&/^total (?:dos |de )?lancamentos atuais/.test(n))metadata.totalScope='currentCharges';if(total.value!=null){totals.push(total.value);declaredTotalLines.push({line:i,value:total.value,current:currentInspection.detected});if(currentInspection.detected){currentTotals.push(total.value);totalTrace.accepted++;}summarySources.add(i);if(/^total (?:dos |de )?lancamentos atuais/.test(n))metadata.totalScope='currentCharges';return;}
+    if(total.label){const next=(lines[i+1]||'').match(/^(?:R\$\s*)?(-?[\d.]+,\d{2})$/i);if(next){totals.push(money(next[1]));declaredTotalLines.push({line:i+1,value:money(next[1]),current:currentInspection.detected});if(currentInspection.detected){currentTotals.push(money(next[1]));totalTrace.accepted++;}consumed.add(i+1);summarySources.add(i);summarySources.add(i+1);}else issues.push('Linha '+(i+1)+': referência ao total sem valor adjacente; conferir.');return;}
    }
    const due=n.match(/^(?:data de )?vencimento\s*:?\s*(\d{2}\/\d{2}\/\d{4})$/);if(due){metadata.dueDate=parseDate(due[1]);summarySources.add(i);return;}
    if(/^(?:periodo (?:de lancamentos|da fatura)|ciclo da fatura)\b/.test(n))return;
@@ -158,7 +174,12 @@ function readItau(text,options={}){
   if(conflicting){for(const i of futureLines)summarySources.delete(i);issues.push('Resumo futuro divergente; nenhuma parcela foi criada a partir do resumo.');}
   else issues.push('Resumo de próximas faturas usado somente para conferência; não cria compras ou parcelas.');
  }
- return {...bankResult(items,issues,totals,metadata,'Itaú'),pendingDateItems,sourceAccounting:{recognized:[...recognizedSources],summary:[...summarySources]}};
+ const currentUnique=[...new Set(currentTotals)];totalTrace.conflictingCurrentTotals=currentUnique.length>1?currentUnique.length:0;
+ if(currentUnique.length){
+  for(const ref of declaredTotalLines){if(currentUnique.length>1&&ref.current||currentUnique.length===1&&!ref.current&&ref.value!==currentUnique[0]){summarySources.delete(ref.line);issues.push('Linha '+(ref.line+1)+': total declarado de escopo distinto ou conflitante; conferir composição, sem compensar lançamentos.');if(!ref.current)totalTrace.otherScopeTotals++;}}
+ }
+ const financial=bankResult(items,issues,currentUnique.length?currentTotals:totals,metadata,'Itaú');
+ return {...financial,totalTrace,pendingDateItems,sourceAccounting:{recognized:[...recognizedSources],summary:[...summarySources]}};
 }
 function readBradesco(text){
  const items=[],issues=[],totals=[],metadata={future:{}};let section='transactions';
@@ -272,6 +293,6 @@ function validBytes(value,min,max){return Array.isArray(value)&&value.length>=mi
 async function key(password,salt,usage){if(!globalThis.crypto?.subtle)fail('Criptografia indisponível. Use navegador compatível e HTTPS.');if(password.length<12)fail('Use uma senha com pelo menos 12 caracteres.');const material=await crypto.subtle.importKey('raw',new TextEncoder().encode(password),'PBKDF2',false,['deriveKey']);return crypto.subtle.deriveKey({name:'PBKDF2',salt,iterations:310000,hash:'SHA-256'},material,{name:'AES-GCM',length:256},false,[usage]);}
 async function encrypt(data,password){if(!globalThis.crypto?.subtle)fail('Criptografia indisponível. Use navegador compatível e HTTPS.');const payload=new TextEncoder().encode(JSON.stringify(data));if(payload.byteLength>10*1024*1024)fail('Backup excede 10 MB de dados serializados. Preserve os anexos originais e revise o tamanho antes de exportar.');const salt=crypto.getRandomValues(new Uint8Array(16)),iv=crypto.getRandomValues(new Uint8Array(12));const k=await key(password,salt,'encrypt');const body=await crypto.subtle.encrypt({name:'AES-GCM',iv},k,payload);return {format:'fatura-backup-v1',salt:[...salt],iv:[...iv],body:[...new Uint8Array(body)]};}
 async function decrypt(envelope,password){if(!envelope||envelope.format!=='fatura-backup-v1'||!validBytes(envelope.salt,16,16)||!validBytes(envelope.iv,12,12)||!validBytes(envelope.body,16,16*1024*1024))fail('Backup inválido.');const k=await key(password,new Uint8Array(envelope.salt),'decrypt');const body=await crypto.subtle.decrypt({name:'AES-GCM',iv:new Uint8Array(envelope.iv)},k,new Uint8Array(envelope.body));return JSON.parse(new TextDecoder().decode(body));}
-const api={reviewItem,money,cents,month,date,addMonth,split,validateGroup,groupMembers,csvRows,adapters,canonicalBank,detectBank,extractTotal,parse,installment,validateInstallments,fingerprint,reconcile,validateImport,project,allocations,statement,csvCell,encrypt,decrypt};
+const api={inspectItauCurrentTotal,reviewItem,money,cents,month,date,addMonth,split,validateGroup,groupMembers,csvRows,adapters,canonicalBank,detectBank,extractTotal,parse,installment,validateInstallments,fingerprint,reconcile,validateImport,project,allocations,statement,csvCell,encrypt,decrypt};
 if(typeof module!=='undefined')module.exports=api;else root.Fatura=api;
 })(globalThis);

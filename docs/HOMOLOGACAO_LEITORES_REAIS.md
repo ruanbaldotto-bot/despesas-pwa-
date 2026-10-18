@@ -198,3 +198,31 @@ Executar o mesmo wrapper protegido, conferir versão/hash e usar -CompareReferen
 139 testes aprovados, preservando os 131 anteriores e acrescentando oito. Casos novos: campos/parcelas sem inventar ano; total explícito após futuro; rótulo do total quebrado; fragmentos vinculados a uma decisão; vazamento de seção entre colunas; referências futuras em continuação; correção individual com data obrigatória e sem escrita; auditor protegido distinguindo conferência provisória de aprovação. Todas as fontes e referências desses testes são sintéticas.
 
 Pacote privado exclusivamente sintético regenerado com anterior preservado, 226 arquivos, 12 exemplos exatos e banco isolado. Cache **2d8fe75fdcfe8bea**. core.js/intelligence.js/pdf-reader.mjs/assets.js/sw.js comparados por HTTPS válido; preview apenas 127.0.0.1:43189, Serve privado e Funnel falso. Nenhum IndexedDB apagado. Testes físicos do iPhone e nova auditoria protegida continuam pendentes; main preservada e sem deploy público.
+
+## Itaú — integração do total estruturado à conciliação
+
+Auditoria real **jabu-audit-7** com hash confirmado: 90 lançamentos estruturados pendentes de data, 50 compras parceladas estruturadas, zero transações prontas, 167 exceções, zero candidatas fora da revisão e quatro de cinco referências conferidas. Total atual ausente, conciliação não concluída e projeção incompleta. Esses resultados permanecem como última evidência real; não são resultados do motor novo.
+
+Motor **jabu-audit-8**, SHA-256 **0e4e8ff900d22fc734029bb6550eff08a304c15303299971fb4dff7cacfba419**. Não houve nova leitura do PDF real pelo agente, pois a senha permanece no prompt local do proprietário. Nova auditoria protegida solicitada.
+
+### Diferenças de regras corrigidas
+
+O detector estrutural contava um rótulo atual seguido de valor, enquanto o parser financeiro exigia uma grafia restrita. Agora ambos usam inspectItauCurrentTotal, uma única função do núcleo para o rótulo explícito dos lançamentos atuais e seu valor. Aceita qualificadores descritivos e formatação monetária com valor único; rejeita múltiplos valores, números adicionais, referências de financiamento/limite ou contexto posterior ambíguo. Não assume que qualquer linha com preço é total.
+
+Totais da composição genérica da fatura não são misturados com total explicitamente rotulado dos lançamentos atuais. O rótulo explícito define a composição a conciliar; valores declarados de outra composição que divergirem continuam como exceções financeiras para conferência, sem alterar compras. Dois totais atuais conflitantes permanecem sem total selecionado; não é escolhido o que coincidir com a soma. Oferta continua bloqueada. Não foram criados lançamentos compensatórios.
+
+A incompatibilidade das regras foi comprovada com fontes sintéticas. A causa exata do bloqueio no documento real ainda depende do retorno de totalTrace: detecção, aceitação léxica, passagem ao resultado, bloqueio por oferta, ausência/multiplicidade de valor, contexto numérico/ambíguo, outros escopos e conflitos entre totais atuais. O rastreio contém apenas contagens fixas, nunca valores, fontes ou motivos arbitrários.
+
+### Datas, parcelas e exceções preservadas
+
+O mecanismo de candidatos pendentes não foi substituído. Parcela atual/total e valor são validados antes de preservar o candidato, mas nenhuma data/ano é inventada. Confirmação de período continua explícita, nunca baseada somente no vencimento. Totais e projeções de candidatos continuam provisórios e não autorizam salvar como confirmado.
+
+parcelValidation informa contagens de parcelas prontas, pendentes de data/seção e inválidas, além de possíveis candidatos duplicados (sem exclusão automática). reviewProfile classifica financialCoverage e unknownFormat por forma financeira e escopo; nenhuma descrição ou valor é emitido. Esses perfis orientam a revisão das exceções restantes, sem transformar limites, ofertas ou linhas suspeitas em compras.
+
+### Evidência de testes e próxima execução
+
+147 testes aprovados, preservando os 139 anteriores e acrescentando oito regressões. Há teste com 90 candidatos sintéticos e 50 parcelas: todos permanecem sem ano até confirmação de período; depois 90 itens ficam prontos e conciliam exatamente no cenário sintético. Outros casos cobrem detector/parser compartilhados, qualificadores, totais de escopos distintos, conflitos atuais, rejeições, moeda em centavos e passagem pelo PDF protegido até referência/conciliação/projeção. Os quatro campos financeiros anteriormente validados são cobertos novamente com referências inteiramente sintéticas.
+
+Executar o wrapper protegido com -CompareReferences, conferindo versão/hash. Acrescentar -ReviewPeriod somente com evidência suficiente para confirmar as datas originais. Retornar apenas JSON agregado incluindo totalTrace, itauStructure, structuralRecognition, parcelValidation, reviewProfile, referenceComparison e coverage. Sem confirmação das datas, zero itens prontos pode coexistir com candidatos estruturados preservados; não confundir essa situação com aprovação financeira.
+
+Nenhuma homologação real concluída. Exigir total atual correto, reconhecimento individual confiável, revisão das datas, conciliação exata, parcelas coerentes e cobertura preservada. Pacote privado exclusivamente sintético regenerado e anterior preservado: 226 arquivos/12 exemplos exatos, banco isolado, cache **a6a7a3ebb4618aeb**. Arquivos atualizados conferidos por HTTPS válido, somente 127.0.0.1:43189, Serve privado/Funnel falso. IndexedDB existente e main preservados; sem deploy público. Validação física no iPhone permanece pendente.
