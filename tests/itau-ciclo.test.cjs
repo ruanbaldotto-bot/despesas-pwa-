@@ -3,9 +3,9 @@ const F=require('../core.js');
 const parse=s=>F.parse(s,'Itaú','pdf');
 const fixture=()=>fs.readFileSync('tests/fixtures/bancos/itau-ciclo-sintetico.txt','utf8');
 test('Itaú: período explícito resolve virada de ano, parcelas, créditos e pagamentos em centavos',()=>{
- const r=parse(fixture());assert.equal(r.items.length,4);assert.equal(r.diagnostics.exceptions.length,0);assert.equal(r.reportedTotalCents,13015);assert.equal(F.reconcile(r.items,r.reportedTotalCents).ok,true);
+ const r=parse(fixture());assert.equal(r.items.length,4);assert.equal(r.diagnostics.exceptions.length,1);assert.equal(r.reportedTotalCents,13015);assert.equal(F.reconcile(r.items,r.reportedTotalCents).ok,true);
  assert.deepEqual(r.items.map(e=>e.date),['2030-12-20','2031-01-02','2031-01-05','2031-01-07']);assert.deepEqual(r.items.map(e=>e.amountCents),[10005,5010,-500,-1500]);assert.equal(r.items[0].installmentNumber,3);assert.equal(r.items[1].installmentNumber,8);assert.equal(r.items[2].kind,'refund');assert.equal(r.items[3].kind,'bankPayment');
- const projection=F.project(r.items.map((e,i)=>({...e,id:i+1,cardId:1,invoiceMonth:'2031-01'})),'2031-01',12);assert.equal(projection[1].estimated,15015);assert.equal(projection[5].estimated,10005);assert.equal(projection[8].estimated,0);assert.equal(r.diagnostics.coverage.financialLinesOutsideReview,1); // explicit financing offer still disclosed to the auditor
+ const projection=F.project(r.items.map((e,i)=>({...e,id:i+1,cardId:1,invoiceMonth:'2031-01'})),'2031-01',12);assert.equal(projection[1].estimated,15015);assert.equal(projection[5].estimated,10005);assert.equal(projection[8].estimated,0);assert.equal(r.diagnostics.coverage.financialLinesOutsideReview,0); // financing offer explicitly held for review, never a purchase
 });
 test('Itaú: vencimento e competência isolados nunca fornecem o ano da compra',()=>{
  for(const prefix of ['Vencimento: 25/01/2031','Competência: 01/2031','Período de lançamentos: 16/12/2030 a 15/01/2031\nPeríodo de lançamentos: 16/12/2029 a 15/01/2030']){const r=parse(prefix+'\nLançamentos\n02/01 LOJA FICTICIA 03/10 10,00');assert.equal(r.items.length,0);assert.equal(r.diagnostics.exceptions.length,1);}

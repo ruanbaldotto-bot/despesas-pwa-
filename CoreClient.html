@@ -172,7 +172,7 @@ function parseBase(text,bank,format){
  return {items,issues,reportedTotalCents:format==='csv'?null:extractTotal(text),diagnostics:{exceptions,informational:0,unresolved:exceptions.length}};
 }
 function pdfDiagnostics(text,result){
- const lines=text.split(/\r?\n/),exceptions=[];let informational=0;
+ const lines=text.split(/\r?\n/),exceptions=[],informationalLines=new Set();let informational=0;
  const retained=[];
  for(const issue of result.issues){const number=issue.match(/^Linha (\d+)/);if(!number){retained.push(issue);continue;}
  const index=Number(number[1])-1,line=lines[index]||'',n=normalize(line);
@@ -180,7 +180,16 @@ function pdfDiagnostics(text,result){
  const dated=/^\s*(?:\d{4}-\d{2}-\d{2}|\d{1,2}[\/.-]\d{2}|\d{1,2}\s+[a-zç]{3})(?:\b|\s)/i.test(line);
  const monetary=/^\s*(?:R\$\s*)?-?[\d.,]+[,.]\d{2}\s*[DC-]?\s*$/i.test(line)||/(?:R\$|[\d.]+,\d{2})\s*[DC-]?\s*$/i.test(line);
  const excluded=/oferta|resumo não virou|item em seção/.test(issue);
- if(!obviousInfo&&!excluded&&(dated||monetary))exceptions.push({line:index+1,source:line,reason:issue,resolved:false});else informational++;
+ if(!obviousInfo&&!excluded&&(dated||monetary))exceptions.push({line:index+1,source:line,reason:issue,resolved:false});else {informational++;informationalLines.add(index);}
+ }
+ // Itaú coverage is a review obligation, even for candidates previously grouped as information.
+ if(result.sourceAccounting){
+  const recognized=new Set(result.sourceAccounting.recognized),summary=new Set(result.sourceAccounting.summary),reviewed=new Set(exceptions.map(e=>e.line-1));
+  lines.forEach((line,i)=>{if(recognized.has(i)||summary.has(i)||reviewed.has(i))return;
+   if(!/^\s*(?:\d{4}-\d{2}-\d{2}|\d{2}\/\d{2})\b/.test(line)&&!/[\d.]+,\d{2}\s*[DC-]?\s*$/i.test(line))return;
+   const reason='Linha '+(i+1)+': candidato financeiro fora do reconhecimento; revisar seção, tipo e valor, inclusive ofertas e resumos. Nenhum lançamento criado.';
+   exceptions.push({line:i+1,source:line,reason,resolved:false});reviewed.add(i);if(informationalLines.has(i)){informational--;informationalLines.delete(i);}
+  });
  }
  const issues=[...exceptions.map(e=>e.reason),...retained];if(informational)issues.push(informational+' linhas informativas ou excluídas agrupadas; confira o documento (inclui ofertas quando presentes).');
  const {sourceAccounting,...clean}=result;

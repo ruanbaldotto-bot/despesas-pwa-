@@ -62,6 +62,8 @@ export async function readPDF(file, options = {}) {
         characters += item.str.length;
         if (characters > 2_000_000) throw new Error('Texto do PDF excede o limite de leitura.');
       }
+      // Optional local audit hook: the normal import path never installs it.
+      if (typeof options.onPage === 'function') await options.onPage(content.items);
       lines.push(...textRows(content.items));
       page.cleanup();
     }

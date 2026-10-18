@@ -23,5 +23,10 @@ function structure(text){
  }
  return r;
 }
-module.exports={structure};
+function reviewReasons(exceptions){
+ const counts={missingDateContext:0,mergedColumns:0,invalidInstallment:0,ambiguousDate:0,financialCoverage:0,unknownFormat:0,other:0};
+ for(const e of exceptions){const s=e.reason||'';const key=/sem ano|fora do período/.test(s)?'missingDateContext':/colunas diferentes/.test(s)?'mergedColumns':/Parcelamento inválido/.test(s)?'invalidInstallment':/Data adicional|sufixo ambíguo/.test(s)?'ambiguousDate':/candidato financeiro fora/.test(s)?'financialCoverage':/formato.*não reconhecido/.test(s)?'unknownFormat':'other';counts[key]++;}
+ return counts;
+}
+module.exports={structure,reviewReasons};
 

@@ -100,3 +100,31 @@ O auditor informa dateContext, installmentPurchases e coverage: linhas candidata
 Pacote sintético privado validado (226 arquivos; 12 exemplos exatos; banco isolado) e servido novamente em loopback. Cache `ffeb54b2a07e654a`; arquivos core.js/assets.js/sw.js correspondem ao pacote por HTTPS válido. Pacote anterior preservado. Funnel desativado. Nenhum dado de navegador apagado; instalação/cache do iPhone ainda dependem de verificação física.
 
 Para atualizar o iPhone: fechar todas as janelas do Jabu e abas Safari da mesma origem; abrir online, aguardar aviso de atualização; fechar e reabrir novamente. Não limpar o armazenamento nem reinstalar para forçar a atualização. Repetir os testes com dados sintéticos e registrar o resultado físico.
+
+## Falha persistente Itaú — motor verificável e cobertura obrigatória
+
+Nova auditoria informada pelo proprietário após a alteração anterior: 339 linhas, 1 transação, 156 exceções, zero compras parceladas, total não reconhecido e contexto temporal ausente/ambíguo. Das 166 linhas candidatas financeiras, uma foi reconhecida, 148 foram encaminhadas à revisão e 17 ficaram fora. Os números anteriores não demonstraram melhora; homologação permanece reprovada/pendente.
+
+### Verificação de execução
+
+No checkout autorizado, core.js e CoreClient.html estão sincronizados com Core.gs; require.resolve aponta para o core.js relativo ao auditor. PDF.js local identificado como 6.4.299; Node local 24.19.0, Windows. O PowerShell já usava PSScriptRoot para localizar o auditor, mas não havia identificação suficiente para provar qual cópia o proprietário executou. Os campos retornados são compatíveis com código recente; não é possível afirmar retrospectivamente a versão exata daquela execução.
+
+Motor novo: **jabu-audit-4**, SHA-256 **de4534a439d6cab5cd149124236fdb21e7e854f18a8b7ab56b3c7ce3eee4160e**. Fingerprint somente de código: auditor, wrapper PowerShell, núcleo/fonte gerada, leitor, utilitários e PDF.js/worker. Nunca inclui hash da fatura, senha ou caminho do documento. Usar o script do checkout autorizado por caminho absoluto; ele resolve Node uma vez, imprime versão/hash antes do prompt oculto, exige sincronização e repassa o hash esperado ao mesmo auditor. Node recusa divergência antes de ler documento/senha. Teste executado a partir de outra pasta confirma resolução relativa ao script; teste com cópia gerada divergente é recusado. Fingerprint identifica a cópia executada; não comprova a correção financeira do parser.
+
+### Cobertura e investigação estrutural
+
+O filtro de diagnóstico podia agrupar candidatos financeiros como informações/ofertas. Agora, no Itaú, toda linha marcada pela heurística financeira que não esteja em fonte reconhecida, resumo explicitamente identificado ou exceção é encaminhada à revisão individual pendente. Isso inclui candidatos em ofertas/resumos e pode aumentar exceções; não transforma essas linhas em compras. O salvamento permanece bloqueado até revisão/exclusão explícita justificada, além da conciliação. Teste com 17 candidatos anteriormente excluídos confirma zero candidatos fora da revisão. O total de exceções pode ser maior que exceptionSourceLines porque a detecção de exceções também cobre outros formatos de data. A cobertura não é garantia de detectar qualquer formato financeiro ainda desconhecido.
+
+Novo hook local de inspeção de itens PDF, sem modificar a extração normal. Probe local retorna só contagens fixas de ordem, células de valor, linhas com múltiplos valores/datas, datas após valores, cabeçalhos e total misturado com outros elementos. Mantém em memória uma reconstrução candidata por coordenadas e compara reconhecimento/conciliação/parcelas; **modo diagnóstico, não usado para importar**. Não escolhe automaticamente a alternativa com menos exceções. Histogramas de revisão usam categorias fixas, nunca motivos arbitrários do documento.
+
+Não há senha temporária disponível no processo do agente; por isso o conteúdo e a geometria do PDF real protegido não foram inspecionados nesta etapa. A execução local protegida foi solicitada com caminho absoluto do script, retorno agregado engine/layout/reviewReasons/coverage e resultados financeiros. Nenhum texto, valor, data, imagem, senha ou documento real foi enviado ao modelo ou aos serviços externos. Não foi implementada outra interpretação especulativa de datas/total. A reconstrução candidata precisa da auditoria real antes de qualquer adoção no importador.
+
+### Evidência e próxima validação
+
+113 testes aprovados: 106 casos anteriores preservados e sete novos. Dois casos anteriores fortalecidos para a nova obrigação de revisar oferta financeira antes de salvar; nenhum caso removido. Testes novos cobrem versão/imports fora da pasta corrente, fingerprint/dependência e cópia gerada divergente, 17 candidatos, geometria sintética de colunas, ordem/total misturado, hook com PDF protegido e histograma sem vazamento. Fixtures posicionais são sintéticas; não são prova da geometria real.
+
+Executar o wrapper protegido do checkout autorizado e conferir versão/hash antes da senha. Retornar somente JSON agregado. Exigir total correto, conciliação exata, parcelas coerentes, datas ambíguas em revisão, nenhuma linha financeira candidata fora do reconhecimento/revisão e testes aprovados. Até isso ocorrer, não homologado. No iPhone, fechar/reabrir online para atualizar o cache sem apagar IndexedDB; confirmar resultados fisicamente.
+
+Pacote privado exclusivamente sintético preservado em backup e regenerado: 226 arquivos, 12 exemplos exatos e banco isolado, cache 82ae0a816493df1b. core.js/pdf-reader.mjs/assets.js/sw.js conferidos por HTTPS com TLS válido; servidor apenas 127.0.0.1:43189, Serve sem Funnel. Nenhum deploy público, dado do navegador apagado ou alteração de main.
+
+Atualização recebida do proprietário: execução real de jabu-audit-4 com hash confirmado. Quatro páginas, 339 linhas, 168 células somente monetárias; 1 transação, 173 exceções (130 sem contexto de data, 25 formato, 17 cobertura e uma coluna mesclada), zero compras parceladas, total ausente e zero candidatas financeiras fora da revisão. Cobertura corrigida confirmada nesta execução; reconhecimento financeiro não homologado. Próxima etapa autorizada: reconstrução posicional e período informado explicitamente pelo usuário na revisão.
