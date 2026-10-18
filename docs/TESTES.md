@@ -71,3 +71,7 @@ Usar o roteiro de INSTALACAO.md e documentos representativos autorizados de cada
 Rodada Tailscale: 80/80 aprovados; verificador estrutural/exemplos reforçado, bind loopback e rotas 404 verificados. Resultado em test-output-tailscale.txt. Teste físico e configuração final privada pendentes conforme TAILSCALE_PRIVADO.md.
 
 Atualização Tailscale: iPhone online e mesma conta confirmados pela CLI; Serve HTTPS 443 com proxy único e sem Funnel; filtro efetivo somente origens do iPhone e TCP 443; TLS padrão autorizado e HTTP 200 sintético. Navegador integrado abriu a URL privada. Não equivale a teste Safari físico; nenhum novo teste automatizado necessário para esta atualização operacional/documental.
+
+## Diagnóstico complementar Itaú
+
+98 testes aprovados: 95 anteriores preservados e três novos testes sintéticos para contadores estruturais locais, privacidade do resultado e classificação da posição do total. Execução por `node --test tests/*.test.cjs` (npm indisponível). O diagnóstico não altera a importação nem os dados. Auditoria real Itaú informada pelo proprietário: 1 transação, 156 exceções, total não reconhecido e nenhuma parcela identificada. Nova execução local protegida pendente; não constitui homologação financeira ou teste físico no iPhone.

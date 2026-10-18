@@ -74,3 +74,11 @@ Pacotes anteriores preservados; reconstrução usa somente a allowlist sintétic
 No iPhone online com Tailscale: fechar Jabu Teste e todas as abas dessa origem; abrir online, aguardar carregamento, fechar novamente e reabrir para ativar o worker novo. Não limpar armazenamento. Testar revisão de CSV/PDF sintéticos, correção de cada campo, exceção impedindo salvar, conciliação, parcelas/projeções, duplicidade, restauração e safe areas. Registrar resultados em IPHONE_REGISTRO_HOMOLOGACAO.md. Documentos reais só devem ser revistos no fluxo local autorizado, sem screenshots/conteúdo externo. Nenhum teste físico foi marcado aprovado nesta rodada.
 
 Pacote sintético final desta rodada: versão de cache f828d8bfd994ddbf, 226 recursos permitidos e 12 amostras sintéticas conferidas. Nenhum dos documentos de auditoria integra esse pacote.
+
+## Itaú — diagnóstico agregado informado pelo proprietário
+
+Auditoria local protegida: 339 linhas, 1 transação reconhecida, 156 exceções e 177 linhas informativas. Duas linhas começam com data completa, 134 com data curta, 97 contêm múltiplas expressões no formato de data e três contêm somente valores. Total não reconhecido; nenhuma parcela identificada. **Revisão necessária; não homologado.**
+
+O contador de múltiplas datas também pode contar a notação de parcelas. Esses números não demonstram, isoladamente, quais linhas são transações ou qual ano deve ser utilizado. O diagnóstico complementar local `tools/estrutura-itau.cjs` retorna somente contagens fixas de padrões, seções conhecidas, possíveis colunas mescladas e posição do total. Não retorna texto, datas, valores nem identificadores. Candidatos a parcelas não equivalem a parcelas financeiramente reconhecidas.
+
+Executar novamente o script de auditoria protegida, com senha digitada no prompt local, e fornecer apenas o resultado agregado incluindo `itauStructure`. A senha temporária não está disponível no processo do agente. Não foi aplicada correção especulativa ao adaptador, nem declarada melhora dos resultados reais. A aplicação e o ambiente privado permanecem na versão anterior até existir uma correção validada.
