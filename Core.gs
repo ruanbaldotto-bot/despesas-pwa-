@@ -67,20 +67,67 @@ function datedBankRow(line){
  return make(parseDate(m[1]),m[2].trim(),value);
 }
 function bankResult(items,issues,totals,metadata,bank){const unique=[...new Set(totals)];if(unique.length>1)issues.push('Totais declarados conflitantes; confira o total manualmente.');return {items,issues,reportedTotalCents:unique.length===1?unique[0]:null,metadata,bank};}
+// Short dates require an explicit transaction period, never the current year or due year alone.
+function itauCycle_(lines){
+ const ranges=[];
+ for(const raw of lines){const n=normalize(raw),m=n.match(/^(?:periodo (?:de lancamentos|da fatura)|ciclo da fatura)\s*:?\s*(\d{2}\/\d{2}\/\d{4})\s+(?:a|ate|-)\s+(\d{2}\/\d{2}\/\d{4})$/);if(!m)continue;
+  try{const from=parseDate(m[1]),to=parseDate(m[2]),days=(Date.parse(to)-Date.parse(from))/86400000;if(days<0||days>62)return null;ranges.push({from,to});}catch{return null;}
+ }
+ const unique=[...new Map(ranges.map(r=>[r.from+'|'+r.to,r])).values()];return unique.length===1?unique[0]:null;
+}
+function itauRow_(line,cycle,explicitSection){
+ if(ambiguousPDFRow_(line))fail('Possíveis transações de colunas diferentes na mesma linha; separar e revisar.');
+ const m=line.match(/^\s*(\d{4}-\d{2}-\d{2}|\d{2}\/\d{2}(?:\/\d{4})?)\s+(.+?)\s+(?:R\$\s*)?(-?[\d.]+,\d{2})\s*([DC-])?\s*$/i);if(!m)return null;
+ let resolved=m[1];
+ if(/^\d{2}\/\d{2}$/.test(resolved)){
+  if(!cycle||!explicitSection)fail('Data sem ano: período explícito dos lançamentos e seção de transações necessários.');
+  const candidates=[];
+  for(let year=Number(cycle.from.slice(0,4));year<=Number(cycle.to.slice(0,4));year++){try{const d=parseDate(resolved+'/'+year);if(d>=cycle.from&&d<=cycle.to)candidates.push(d);}catch{}}
+  if(candidates.length!==1)fail('Data curta fora do período explícito ou ambígua; revisão necessária.');resolved=candidates[0];
+ }
+ const note=m[2].trim(),suffix=note.match(/(?:\(\s*)?(?:parcela\s*)?(\d{1,3})\s*(?:\/| de )\s*(\d{1,3})\s*\)?\s*$/i);
+ const rest=suffix?note.slice(0,suffix.index).trim():note;
+ if(/\b\d{2}\/\d{2}(?:\/\d{4})?\b/.test(rest)||suffix&&/\b(?:em|dia|data|desde|ate)\s*$/i.test(normalize(rest)))fail('Data adicional ou sufixo ambíguo na descrição; confira as colunas e parcelas.');
+ let value=money(m[3]);if(m[4]&&/C|-/.test(m[4].toUpperCase()))value=-Math.abs(value);
+ // Payments and credits are never anchors for future purchase installments.
+ const credit=/^(?:pagamento|estorno|credito)\b/.test(normalize(note))||value<0;
+ const row=make(parseDate(resolved),credit&&suffix?rest:note,value);
+ if(credit){row.note=note;delete row.installmentNumber;delete row.installmentsTotal;}
+ return row;
+}
+function itauTotal_(line){
+ const n=normalize(line),label='(?:total (?:desta |da )?fatura|valor total (?:desta |da )?fatura|total a pagar)';
+ const m=n.match(new RegExp('^'+label+'\\s*(?:\\(r\\$\\))?\\s*[:=\\-]?\\s*(?:r\\$\\s*)?(-?[\\d.]+,\\d{2})\\s*$'));
+ return {value:m?money(m[1]):null,label:new RegExp('^'+label+'\\s*(?:\\(r\\$\\))?\\s*[:=]?\\s*$').test(n)};
+}
 function readItau(text){
- const items=[],issues=[],totals=[],metadata={};let section='transactions';
- text.split(/\r?\n/).forEach((raw,i)=>{const line=raw.replace(/\u00a0/g,' ').trim(),n=normalize(line);if(!line)return;
-  if(/^(?:opcoes de parcelamento|parcelamento da fatura|simulacao|oferta de parcelamento)/.test(n)){section='offer';issues.push(`Linha ${i+1}: oferta de financiamento excluída das compras.`);return;}
-  if(/^(?:compras parceladas.*proximas|parcelas futuras|compromissos futuros)/.test(n)){section='future';return;}
-  if(/^(?:lancamentos(?: atuais|: compras e saques)?|compras e saques|pagamentos e creditos|transacoes do cartao)$/.test(n)){section='transactions';return;}
-  if(section!=='transactions'){if(/^\d/.test(n))issues.push(`Linha ${i+1}: item em seção de oferta/futuro não importado.`);return;}
+ const items=[],issues=[],totals=[],metadata={},lines=text.split(/\r?\n/).map(s=>s.replace(/\u00a0/g,' ').trim()),cycle=itauCycle_(lines);let section='transactions',explicitSection=false;
+ metadata.dateContext=cycle?'período explícito':'ausente ou ambíguo';
+ const consumed=new Set(),recognizedSources=new Set(),summarySources=new Set();
+ lines.forEach((line,i)=>{const n=normalize(line);if(!line||consumed.has(i))return;
+  if(/^(?:opcoes de parcelamento|parcelamento da fatura|simulacao|oferta de parcelamento)\b/.test(n)){section='offer';explicitSection=false;issues.push('Linha '+(i+1)+': oferta de financiamento excluída das compras.');return;}
+  if(/^(?:compras parceladas.*proximas|parcelas futuras|compromissos futuros)\b/.test(n)){section='future';explicitSection=false;return;}
+  if(/^(?:lancamentos(?: atuais|: compras e saques|: produtos e servicos)?|compras e saques|pagamentos e creditos|transacoes do cartao)(?:\s*\(continuacao\))?$/.test(n)){section='transactions';explicitSection=true;return;}
+  if(/^resumo da fatura$/.test(n)){section='summary';explicitSection=false;return;}
   try{
-   const total=n.match(/^(?:total desta fatura|total da fatura|valor total desta fatura|total a pagar)\s*:?\s*(?:r\$\s*)?(-?[\d.]+,\d{2})$/);if(total){totals.push(money(total[1]));return;}
-   const due=n.match(/^vencimento\s*:?\s*(\d{2}\/\d{2}\/\d{4})$/);if(due){metadata.dueDate=parseDate(due[1]);return;}
-   if(/^(?:itau\b|data\s+(?:lancamento|descricao)|resumo da fatura$)/.test(n))return;
-   const row=datedBankRow(line);if(row)items.push(row);else issues.push(`Linha ${i+1}: formato Itaú não reconhecido; confira o documento.`);
-  }catch(e){issues.push(`Linha ${i+1}: ${e.message}`);}
- });return bankResult(items,issues,totals,metadata,'Itaú');
+   if(section!=='offer'&&section!=='future'){
+    const total=itauTotal_(line);if(total.value!=null){totals.push(total.value);summarySources.add(i);return;}
+    if(total.label){const next=(lines[i+1]||'').match(/^(?:R\$\s*)?(-?[\d.]+,\d{2})$/i);if(next){totals.push(money(next[1]));consumed.add(i+1);summarySources.add(i);summarySources.add(i+1);}else issues.push('Linha '+(i+1)+': referência ao total sem valor adjacente; conferir.');return;}
+   }
+   const due=n.match(/^(?:data de )?vencimento\s*:?\s*(\d{2}\/\d{2}\/\d{4})$/);if(due){metadata.dueDate=parseDate(due[1]);summarySources.add(i);return;}
+   if(/^(?:periodo (?:de lancamentos|da fatura)|ciclo da fatura)\b/.test(n))return;
+   if(section!=='transactions'){if(/^\d/.test(n)||/[\d.]+,\d{2}\s*$/.test(n))issues.push('Linha '+(i+1)+(section==='summary'?': registro em resumo exige revisão; não importado.':': item em seção de oferta/futuro não importado.'));return;}
+   if(/^(?:itau\b|data\s+(?:lancamento|descricao))/.test(n))return;
+   let combined=line,used=[];
+   // Reassemble only a bounded, unambiguous fragment inside an explicit transaction section.
+   if(explicitSection&&/^\d{2}\/\d{2}(?:\/\d{4})?(?:\s+[^\d].*)?$/.test(line)&&!/[\d.]+,\d{2}\s*[DC-]?\s*$/i.test(line)){
+    const next=lines[i+1]||'',after=lines[i+2]||'',amountOnly=/^(?:R\$\s*)?-?[\d.]+,\d{2}\s*[DC-]?\s*$/i;
+    if(!/^\d{2}\/\d{2}(?:\/\d{4})?\s*$/.test(line)&&amountOnly.test(next)){combined=line+' '+next;used=[i+1];}
+    else if(/^\d{2}\/\d{2}(?:\/\d{4})?\s*$/.test(line)&&/^[A-Za-zÀ-ÿ]/.test(next)&&!/[\d.]+,\d{2}|^(?:total|limite|saldo|vencimento|lancamentos|resumo|opcoes|parcelas futuras|compras e saques|pagamentos e creditos)\b/.test(normalize(next))&&amountOnly.test(after)){combined=line+' '+next+' '+after;used=[i+1,i+2];}
+   }
+   const row=itauRow_(combined,cycle,explicitSection);if(row){items.push(row);recognizedSources.add(i);used.forEach(n=>{consumed.add(n);recognizedSources.add(n);});}else issues.push('Linha '+(i+1)+': formato Itaú não reconhecido; confira o documento.');
+  }catch(e){issues.push('Linha '+(i+1)+': '+e.message);}
+ });return {...bankResult(items,issues,totals,metadata,'Itaú'),sourceAccounting:{recognized:[...recognizedSources],summary:[...summarySources]}};
 }
 function readBradesco(text){
  const items=[],issues=[],totals=[],metadata={future:{}};let section='transactions';
@@ -135,9 +182,17 @@ function pdfDiagnostics(text,result){
  if(!obviousInfo&&!excluded&&(dated||monetary))exceptions.push({line:index+1,source:line,reason:issue,resolved:false});else informational++;
  }
  const issues=[...exceptions.map(e=>e.reason),...retained];if(informational)issues.push(informational+' linhas informativas ou excluídas agrupadas; confira o documento (inclui ofertas quando presentes).');
- return {...result,issues,diagnostics:{exceptions,informational,unresolved:exceptions.length}};
+ const {sourceAccounting,...clean}=result;
+ const diagnostics={exceptions,informational,unresolved:exceptions.length};
+ if(sourceAccounting){
+  const recognized=new Set(sourceAccounting.recognized),summary=new Set(sourceAccounting.summary),reviewed=new Set(exceptions.map(e=>e.line-1));
+  const coverage={financialCandidateLines:0,recognizedSourceLines:0,exceptionSourceLines:0,summarySourceLines:0,financialLinesOutsideReview:0};
+  lines.forEach((line,i)=>{if(!/^\s*(?:\d{4}-\d{2}-\d{2}|\d{2}\/\d{2})\b/.test(line)&&!/[\d.]+,\d{2}\s*[DC-]?\s*$/i.test(line))return;coverage.financialCandidateLines++;if(recognized.has(i))coverage.recognizedSourceLines++;else if(reviewed.has(i))coverage.exceptionSourceLines++;else if(summary.has(i))coverage.summarySourceLines++;else coverage.financialLinesOutsideReview++;});
+  diagnostics.coverage=coverage;
+ }
+ return {...clean,issues,diagnostics};
 }
-function parse(text,bank,format){const result=parseBase(text,bank,format);if(format!=='csv'&&result.reportedTotalCents==null&&!result.issues.some(s=>/conflitantes/.test(s)))result.reportedTotalCents=extractTotal(text);return format==='csv'?result:pdfDiagnostics(text,result);}
+function parse(text,bank,format){const result=parseBase(text,bank,format);if(format!=='csv'&&result.bank!=='Itaú'&&result.reportedTotalCents==null&&!result.issues.some(s=>/conflitantes/.test(s)))result.reportedTotalCents=extractTotal(text);return format==='csv'?result:pdfDiagnostics(text,result);}
 function reviewItem(fields){
  const item={date:date(fields.date),note:String(fields.note||'').trim(),kind:fields.kind,amountCents:money(fields.value)};
  if(!item.note||!['purchase','refund','bankPayment'].includes(item.kind))fail('Informe descrição e tipo válidos.');

@@ -82,3 +82,21 @@ Auditoria local protegida: 339 linhas, 1 transação reconhecida, 156 exceções
 O contador de múltiplas datas também pode contar a notação de parcelas. Esses números não demonstram, isoladamente, quais linhas são transações ou qual ano deve ser utilizado. O diagnóstico complementar local `tools/estrutura-itau.cjs` retorna somente contagens fixas de padrões, seções conhecidas, possíveis colunas mescladas e posição do total. Não retorna texto, datas, valores nem identificadores. Candidatos a parcelas não equivalem a parcelas financeiramente reconhecidas.
 
 Executar novamente o script de auditoria protegida, com senha digitada no prompt local, e fornecer apenas o resultado agregado incluindo `itauStructure`. A senha temporária não está disponível no processo do agente. Não foi aplicada correção especulativa ao adaptador, nem declarada melhora dos resultados reais. A aplicação e o ambiente privado permanecem na versão anterior até existir uma correção validada.
+
+## Correção direcionada Itaú — validação real pendente
+
+A segunda auditoria informada pelo proprietário confirma 134 linhas iniciadas por data curta, 131 delas terminando em valor, 95 candidatos a sufixos de parcelas, duas referências ao total (uma inline), quatro seções de transações, uma transação reconhecida e 156 exceções. Não permite afirmar que as 131 linhas são compras ou identificar o ano das compras.
+
+Alterações em Core.gs, sincronizadas para core.js/CoreClient.html: datas DD/MM resolvidas somente com período explícito e único de lançamentos, de até 62 dias, e seção de transações reconhecida; virada de ano contemplada. Vencimento, competência isolada, data atual ou nome de arquivo não fornecem o ano. Datas fora do período e períodos conflitantes permanecem exceções. Compras históricas parceladas fora desse intervalo exigem revisão; não se presume que a data original pertença ao ciclo atual.
+
+Sufixos válidos associados a compras são preservados; créditos e pagamentos não geram parcelas futuras. Datas adicionais ambíguas e possíveis colunas mescladas continuam bloqueadas para revisão. Reconstrução limitada a dois/três fragmentos consecutivos em seção explícita; não cruza cabeçalhos ou totais. Não foi implementada divisão especulativa de duas colunas com base apenas em contagens.
+
+Total reconhecido em resumo, na mesma linha ou célula seguinte, incluindo rótulo com `(R$)`. Ofertas/futuro e limites não fornecem o total devido. Valores conflitantes permanecem incertos, sem fallback genérico que possa buscar total de oferta. Nenhum lançamento compensatório criado.
+
+O auditor informa dateContext, installmentPurchases e coverage: linhas candidatas financeiras, fontes reconhecidas, exceções, fontes de resumo e linhas financeiras fora da revisão. Esta última contagem pode incluir ofertas explicitamente excluídas; exige conferência, não significa automaticamente compra perdida. O resultado não expõe texto, valores, datas, caminhos nem senha.
+
+106 testes aprovados (98 anteriores + 8 regressões sintéticas), incluindo PDF protegido com segredo aleatório, reconstrução, projeções, créditos, pagamentos, conciliação e duplicidades. Fixtures são modelos sintéticos dos padrões agregados e hipóteses conservadoras; não reproduzem conteúdo real. Nova execução do auditor protegido solicitada. **Resultados reais após a correção ainda não disponíveis; leitor não homologado.**
+
+Pacote sintético privado validado (226 arquivos; 12 exemplos exatos; banco isolado) e servido novamente em loopback. Cache `ffeb54b2a07e654a`; arquivos core.js/assets.js/sw.js correspondem ao pacote por HTTPS válido. Pacote anterior preservado. Funnel desativado. Nenhum dado de navegador apagado; instalação/cache do iPhone ainda dependem de verificação física.
+
+Para atualizar o iPhone: fechar todas as janelas do Jabu e abas Safari da mesma origem; abrir online, aguardar aviso de atualização; fechar e reabrir novamente. Não limpar o armazenamento nem reinstalar para forçar a atualização. Repetir os testes com dados sintéticos e registrar o resultado físico.

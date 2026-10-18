@@ -40,3 +40,9 @@ Quatro PDFs autorizados auditados somente em processos locais, sem texto/valores
 ## Itaú — investigação complementar pendente
 
 Auditoria agregada do proprietário: uma transação, 156 exceções e total não reconhecido. Acrescentado diagnóstico estritamente local com contagens fixas para separar datas curtas, possíveis parcelas, possíveis colunas mescladas, seções e posição do total. Sem saída de conteúdo, datas, valores ou identificadores. 98 testes sintéticos aprovados (95 preservados + 3). A correção do adaptador aguarda nova execução local protegida; não há homologação real concluída nem alteração do pacote privado nesta etapa. Manter Draft.
+
+## Itaú — correção direcionada e validação pendente
+
+Datas curtas exigem seção de transações e período explícito único, sem usar o ano atual ou vencimento. Reconstrói fragmentos limitados, preserva parcelas válidas de compras e impede projeções de créditos/pagamentos. Rótulos de total com moeda e valor na célula seguinte aceitos; totais de ofertas e conflitos não viram valor devido. Casos ambíguos continuam para revisão; não há reconstrução especulativa de colunas ou compensação financeira.
+
+106 testes aprovados (98 preservados + 8 sintéticos, incluindo PDF protegido). Auditor local acrescenta contexto temporal, contagem de compras parceladas e cobertura de linhas financeiras sem emitir conteúdo/valores/datas/senha. Última auditoria real anterior à alteração: 1 transação, 156 exceções, total ausente; nova execução protegida solicitada. Não declarar leitor homologado. Pacote exclusivamente sintético atualizado no HTTPS privado, anterior preservado, cache novo e Funnel falso verificados no computador; iPhone físico pendente. Main preservada, sem deploy público. Manter Draft.

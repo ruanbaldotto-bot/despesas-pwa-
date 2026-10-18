@@ -1,0 +1,15 @@
+Itaú — FATURA EXCLUSIVAMENTE SINTÉTICA
+Período de lançamentos: 16/12/2030 a 15/01/2031
+Vencimento: 25/01/2031
+Resumo da fatura
+Total desta fatura (R$): 130,15
+Total a pagar
+Informações gerais sintéticas
+Lançamentos: compras e saques
+20/12 LOJA FICTICIA 03/10 100,05
+02/01 OUTRA LOJA FICTICIA 08/12 50,10
+05/01 ESTORNO FICTICIO 5,00 C
+Pagamentos e créditos
+07/01 PAGAMENTO EFETUADO 15,00 C
+Opções de parcelamento
+08/01 OFERTA FICTICIA 01/12 500,00

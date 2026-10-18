@@ -75,3 +75,9 @@ Atualização Tailscale: iPhone online e mesma conta confirmados pela CLI; Serve
 ## Diagnóstico complementar Itaú
 
 98 testes aprovados: 95 anteriores preservados e três novos testes sintéticos para contadores estruturais locais, privacidade do resultado e classificação da posição do total. Execução por `node --test tests/*.test.cjs` (npm indisponível). O diagnóstico não altera a importação nem os dados. Auditoria real Itaú informada pelo proprietário: 1 transação, 156 exceções, total não reconhecido e nenhuma parcela identificada. Nova execução local protegida pendente; não constitui homologação financeira ou teste físico no iPhone.
+
+## Itaú — datas curtas, contexto e composição financeira
+
+106 testes aprovados por `node --test tests/*.test.cjs` (npm indisponível), preservando os 98 existentes. Oito regressões novas: ciclo explícito e virada do ano; recusa de ano inferido do vencimento/competência; datas fora do ciclo/colunas mescladas; fragmentos; totais e ofertas/conflitos; créditos e parcelas inválidas; duplicidades; auditor PDF protegido sem exposição de dados. Modelos inteiramente sintéticos; resultados reais posteriores à correção aguardam execução local protegida. Não é homologação Google, financeira real ou de iPhone físico.
+
+Pacote privado sintético regenerado com backup do anterior, allowlist de 226 arquivos e 12 exemplos verificados. HTTP local 200, apenas 127.0.0.1:43189; arquivos atualizados conferidos por HTTPS com validação TLS, cache ffeb54b2a07e654a. Serve preservado, Funnel falso. Atualização efetiva no cache do iPhone permanece pendente.
