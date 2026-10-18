@@ -1,4 +1,26 @@
+import './file-reader.js';
+export async function readPageTextContent(page) {
+  // getReader is supported without ReadableStream[Symbol.asyncIterator] on WebKit.
+  const reader = page.streamTextContent().getReader();
+  const content = { items: [] };
+  let done = false, characters = 0;
+  try {
+    while (true) {
+      const chunk = await reader.read();
+      if (chunk.done) { done = true; return content; }
+      for (const item of chunk.value.items) {
+        characters += item.str?.length || 0;
+        if (characters > 2_000_000) throw new Error('Texto do PDF excede o limite de leitura.');
+        content.items.push(item);
+      }
+    }
+  } finally {
+    try { if (!done) await reader.cancel(); } finally { reader.releaseLock(); }
+  }
+}
 export async function readPDF(file, options = {}) {
+  const password = options.password || undefined;
+  delete options.password;
   if (file.size != null && file.size > 20 * 1024 * 1024) {
     throw new Error('Arquivo excede 20 MB.');
   }
@@ -12,14 +34,13 @@ export async function readPDF(file, options = {}) {
     fontUrl = fileURLToPath(new URL(fontUrl)).replaceAll('\\','/');
   }
   const task = pdfjs.getDocument({
-    data: new Uint8Array(await file.arrayBuffer()),
+    data: new Uint8Array(options.data || await globalThis.LocalFiles.readBuffer(file)),
     isEvalSupported: false,
-    password: options.password || undefined,
+    password,
     cMapUrl: cmapUrl,
     cMapPacked: true,
     standardFontDataUrl: fontUrl,
   });
-  delete options.password;
   try {
     const pdf = await task.promise;
     if (pdf.numPages > 100) throw new Error('PDF excede 100 páginas.');
@@ -27,7 +48,7 @@ export async function readPDF(file, options = {}) {
     let characters = 0;
     for (let p = 1; p <= pdf.numPages; p++) {
       const page = await pdf.getPage(p);
-      const content = await page.getTextContent();
+      const content = pdf.isPureXfa ? await page.getTextContent() : await readPageTextContent(page);
       let previous = null;
       let line = '';
       for (const item of content.items) {

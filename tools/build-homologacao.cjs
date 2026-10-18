@@ -4,7 +4,7 @@ function build(){
  const out=path.resolve('dist/homologacao');if(fs.existsSync(out))throw new Error('Destino já existe. Preserve ou renomeie dist/homologacao antes de gerar novamente.');
  fs.mkdirSync(out,{recursive:true});
  // Explicit source allowlist: never copies repository, docs, attachments or browser storage.
- const files=['index.html','app.js','core.js','storage.js','intelligence.js','jabu.js','pdf-reader.mjs','styles.css','design-tokens.css','manifest.json','sw.js','assets.js'];
+ const files=['index.html','app.js','core.js','storage.js','intelligence.js','jabu.js','pdf-reader.mjs', 'file-reader.js','styles.css','design-tokens.css','manifest.json','sw.js','assets.js'];
  for(const f of files)fs.copyFileSync(path.join('demo',f),path.join(out,f));
  for(const d of ['icons','vendor','faturas-sinteticas'])fs.cpSync(path.join('demo',d),path.join(out,d),{recursive:true,filter:source=>path.basename(source)!=='.gitkeep'});
  const replace=(f,a,b)=>{const p=path.join(out,f);const s=fs.readFileSync(p,'utf8');if(!s.includes(a))throw new Error('Marcador ausente: '+f);fs.writeFileSync(p,s.replace(a,()=>b));};

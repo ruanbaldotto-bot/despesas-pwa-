@@ -5,7 +5,7 @@ const vm = require('node:vm');
 const productionApp = fs.readFileSync('app.js', 'utf8');
 if (!productionApp.includes("const DB_NAME='despesasDB'")) throw new Error('Nome do banco principal não localizado; geração cancelada antes de copiar arquivos.');
 fs.mkdirSync('demo', { recursive: true });
-for (const file of ['index.html', 'app.js', 'core.js', 'storage.js', 'intelligence.js', 'jabu.js', 'pdf-reader.mjs', 'styles.css', 'design-tokens.css', 'manifest.json', 'sw.js', 'assets.js']) {
+for (const file of ['index.html', 'app.js', 'core.js', 'storage.js', 'intelligence.js', 'jabu.js', 'pdf-reader.mjs', 'file-reader.js', 'styles.css', 'design-tokens.css', 'manifest.json', 'sw.js', 'assets.js']) {
   fs.copyFileSync(file, path.join('demo', file));
 }
 for (const directory of ['icons', 'vendor']) fs.cpSync(directory, path.join('demo', directory), { recursive: true });
