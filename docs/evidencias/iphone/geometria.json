@@ -1,0 +1,132 @@
+{
+  "browser": "Navegador integrado desktop; viewport CSS, sem emulação Safari",
+  "synthetic": true,
+  "measurements": [
+    {
+      "screen": "dashboard",
+      "width": 375,
+      "height": 667,
+      "clientWidth": 360,
+      "scrollWidth": 360
+    },
+    {
+      "screen": "cartoes",
+      "width": 375,
+      "height": 667,
+      "clientWidth": 360,
+      "scrollWidth": 360
+    },
+    {
+      "screen": "projecoes",
+      "width": 375,
+      "height": 667,
+      "clientWidth": 360,
+      "scrollWidth": 360
+    },
+    {
+      "screen": "familia",
+      "width": 375,
+      "height": 667,
+      "clientWidth": 360,
+      "scrollWidth": 360
+    },
+    {
+      "screen": "configuracoes",
+      "width": 375,
+      "height": 667,
+      "clientWidth": 360,
+      "scrollWidth": 360
+    },
+    {
+      "screen": "importacao",
+      "width": 375,
+      "height": 667,
+      "clientWidth": 360,
+      "scrollWidth": 360
+    },
+    {
+      "screen": "dashboard",
+      "width": 390,
+      "height": 844,
+      "clientWidth": 375,
+      "scrollWidth": 375
+    },
+    {
+      "screen": "cartoes",
+      "width": 390,
+      "height": 844,
+      "clientWidth": 375,
+      "scrollWidth": 375
+    },
+    {
+      "screen": "projecoes",
+      "width": 390,
+      "height": 844,
+      "clientWidth": 375,
+      "scrollWidth": 375
+    },
+    {
+      "screen": "familia",
+      "width": 390,
+      "height": 844,
+      "clientWidth": 375,
+      "scrollWidth": 375
+    },
+    {
+      "screen": "configuracoes",
+      "width": 390,
+      "height": 844,
+      "clientWidth": 390,
+      "scrollWidth": 390
+    },
+    {
+      "screen": "importacao",
+      "width": 390,
+      "height": 844,
+      "clientWidth": 375,
+      "scrollWidth": 375
+    },
+    {
+      "screen": "dashboard",
+      "width": 430,
+      "height": 932,
+      "clientWidth": 415,
+      "scrollWidth": 415
+    },
+    {
+      "screen": "cartoes",
+      "width": 430,
+      "height": 932,
+      "clientWidth": 415,
+      "scrollWidth": 415
+    },
+    {
+      "screen": "projecoes",
+      "width": 430,
+      "height": 932,
+      "clientWidth": 415,
+      "scrollWidth": 415
+    },
+    {
+      "screen": "familia",
+      "width": 430,
+      "height": 932,
+      "clientWidth": 415,
+      "scrollWidth": 415
+    },
+    {
+      "screen": "configuracoes",
+      "width": 430,
+      "height": 932,
+      "clientWidth": 430,
+      "scrollWidth": 430
+    },
+    {
+      "screen": "importacao",
+      "width": 430,
+      "height": 932,
+      "clientWidth": 415,
+      "scrollWidth": 415
+    }
+  ]
+}

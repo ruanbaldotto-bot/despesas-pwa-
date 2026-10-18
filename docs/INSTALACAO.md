@@ -1,3 +1,9 @@
+# Preparação visual/iPhone — rodada atual
+
+80/80 testes aprovados (77 anteriores + 3 novos), 18 capturas em dimensões de iPhone e recarga com servidor local desligado. Sem teste em aparelho físico ou deploy. Relatório e instalação: [HOMOLOGACAO_VISUAL_IPHONE.md](HOMOLOGACAO_VISUAL_IPHONE.md). Log: test-output-iphone.txt.
+
+---
+
 # Jabu — prévia e instalação
 
 Manifest Jabu, ícone Apple 180px e maskable. Prévia local: node tools/preview.cjs. Demo em /demo/index.html tem banco e cache separados. node tools/build-demo.cjs gera 12 documentos sintéticos para seis instituições.

@@ -12,3 +12,5 @@ Seis instituições: Santander, Porto Bank, Mercado Pago, Nubank, Itaú e Brades
 - [PR draft](https://github.com/ruanbaldotto-bot/despesas-pwa-/pull/1), [publicação](docs/PUBLICACAO_GITHUB.md)
 
 Desenvolvimento: node tools/sync-core.cjs; node tools/vendor.cjs; node tools/build-demo.cjs; node --test tests/*.test.cjs (runner do script npm test). Prévia: node tools/preview.cjs. Não usar dados reais na demo/Git.
+
+Preparação para iPhone: [relatório atual, galeria e proposta HTTPS](docs/HOMOLOGACAO_VISUAL_IPHONE.md). 80 testes aprovados; pacote sintético isolado em dist/homologacao, sem deploy.

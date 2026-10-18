@@ -1,3 +1,9 @@
+# Preparação visual/iPhone — rodada atual
+
+80/80 testes aprovados (77 anteriores + 3 novos), 18 capturas em dimensões de iPhone e recarga com servidor local desligado. Sem teste em aparelho físico ou deploy. Relatório e instalação: [HOMOLOGACAO_VISUAL_IPHONE.md](HOMOLOGACAO_VISUAL_IPHONE.md). Log: test-output-iphone.txt.
+
+---
+
 # Jabu — homologação de 18/10/2026
 
 Continuação de 40aa4c5 na branch feature/fatura-inteligente, preservando o histórico iniciado em 318c3f5. Identidade publicada em 50c77b5. PR draft: https://github.com/ruanbaldotto-bot/despesas-pwa-/pull/1. Sem merge, deploy público ou uso de documentos financeiros reais.

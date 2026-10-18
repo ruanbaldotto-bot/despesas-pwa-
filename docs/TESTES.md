@@ -1,3 +1,9 @@
+# Preparação visual/iPhone — rodada atual
+
+80/80 testes aprovados (77 anteriores + 3 novos), 18 capturas em dimensões de iPhone e recarga com servidor local desligado. Sem teste em aparelho físico ou deploy. Relatório e instalação: [HOMOLOGACAO_VISUAL_IPHONE.md](HOMOLOGACAO_VISUAL_IPHONE.md). Log: test-output-iphone.txt.
+
+---
+
 # Rodada Jabu — resultado atual
 
 **77/77 testes aprovados**, zero falhas. Runner Node equivalente ao script npm test; npm indisponível. Log: [test-output-jabu.txt](test-output-jabu.txt). Relatório, falhas corrigidas e limites: [JABU_HOMOLOGACAO.md](JABU_HOMOLOGACAO.md). Capturas reais do navegador integrado com dados sintéticos e verificação geométrica em 320 px estão em evidencias/. Safari físico permanece pendente. Os resultados abaixo são históricos da rodada anterior.
