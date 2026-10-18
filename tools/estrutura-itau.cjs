@@ -1,10 +1,14 @@
 // Fixed counters only: no document text, dates, values or identifiers leave this function.
 function structure(text){
- const r={shortRows:0,shortRowsWithAmount:0,amountBeforeAnotherDate:0,trailingInstallmentCandidates:0,fullDateAnchors:0,totalLabels:0,totalInline:0,totalNextLine:0,totalWithoutAdjacentAmount:0,sections:{transactions:0,payments:0,future:0,offers:0,summary:0}};
+ const r={shortRows:0,shortRowsWithAmount:0,amountBeforeAnotherDate:0,trailingInstallmentCandidates:0,fullDateAnchors:0,totalLabels:0,totalInline:0,totalNextLine:0,totalWithoutAdjacentAmount:0,currentTotalLabels:0,currentTotalWithValue:0,currentTotalAfterFutureHeading:0,sections:{transactions:0,payments:0,future:0,offers:0,summary:0}};
  const lines=String(text).split(/\r?\n/).map(s=>s.normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\u00a0/g,' ').trim().toLowerCase());
+ let futureSection=false;
  const amount='(?:r\\$\\s*)?-?[\\d.]+,\\d{2}';
  for(let i=0;i<lines.length;i++){
   const l=lines[i];
+  if(/^(?:compras parceladas.*proximas|parcelas futuras|compromissos futuros)/.test(l))futureSection=true;
+  if(/^(?:lancamentos|pagamentos efetuados|pagamentos anteriores|resumo da fatura)/.test(l))futureSection=false;
+  if(/^total (?:dos |de )?lancamentos atuais\b/.test(l)){r.currentTotalLabels++;if(new RegExp(amount+'\\s*$').test(l))r.currentTotalWithValue++;if(futureSection)r.currentTotalAfterFutureHeading++;}
   if(/^\d{2}\/(?:0[1-9]|1[0-2])(?!\/\d{4})\b/.test(l)){r.shortRows++;if(new RegExp(amount+'\\s*[dc-]?\\s*$').test(l))r.shortRowsWithAmount++;}
   if(new RegExp(amount+'\\s+\\d{2}/(?:0[1-9]|1[0-2])(?:/\\d{4})?\\s+\\S').test(l))r.amountBeforeAnotherDate++;
   if(/\b\d{1,3}\/\d{1,3}\)?\s+(?:r\$\s*)?-?[\d.]+,\d{2}\s*[dc-]?\s*$/.test(l))r.trailingInstallmentCandidates++;

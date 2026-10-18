@@ -84,22 +84,24 @@ function itauCycle_(lines){
 function itauRow_(line,cycle,explicitSection){
  if(ambiguousPDFRow_(line))fail('Possíveis transações de colunas diferentes na mesma linha; separar e revisar.');
  const m=line.match(/^\s*(\d{4}-\d{2}-\d{2}|\d{2}\/\d{2}(?:\/\d{4})?)\s+(.+?)\s+(?:R\$\s*)?(-?[\d.]+,\d{2})\s*([DC-])?\s*$/i);if(!m)return null;
- let resolved=m[1];
- if(/^\d{2}\/\d{2}$/.test(resolved)){
-  if(!cycle||!explicitSection)fail('Data sem ano: período explícito dos lançamentos e seção de transações necessários.');
-  const candidates=[];
-  for(let year=Number(cycle.from.slice(0,4));year<=Number(cycle.to.slice(0,4));year++){try{const d=parseDate(resolved+'/'+year);if(d>=cycle.from&&d<=cycle.to)candidates.push(d);}catch{}}
-  if(candidates.length!==1)fail('Data curta fora do período explícito ou ambígua; revisão necessária.');resolved=candidates[0];
- }
  const note=m[2].trim(),suffix=note.match(/(?:\(\s*)?(?:parcela\s*)?(\d{1,3})\s*(?:\/| de )\s*(\d{1,3})\s*\)?\s*$/i);
  const rest=suffix?note.slice(0,suffix.index).trim():note;
  if(/\b\d{2}\/\d{2}(?:\/\d{4})?\b/.test(rest)||suffix&&/\b(?:em|dia|data|desde|ate)\s*$/i.test(normalize(rest)))fail('Data adicional ou sufixo ambíguo na descrição; confira as colunas e parcelas.');
  let value=money(m[3]);if(m[4]&&/C|-/.test(m[4].toUpperCase()))value=-Math.abs(value);
  // Payments and credits are never anchors for future purchase installments.
  const credit=/^(?:pagamento|estorno|credito)\b/.test(normalize(note))||value<0;
- const row=make(parseDate(resolved),credit&&suffix?rest:note,value);
+ const row=make(undefined,credit&&suffix?rest:note,value);
  if(credit){row.note=note;delete row.installmentNumber;delete row.installmentsTotal;}
- return row;
+ const pending=message=>{const error=new Error(message);error.candidate={...row,shortDate:m[1],sectionConfirmed:explicitSection};delete error.candidate.date;throw error;};
+ let resolved=m[1];
+ if(/^\d{2}\/\d{2}$/.test(resolved)){
+  const [dayValue,monthValue]=resolved.split('/');try{date('2000-'+monthValue+'-'+dayValue);}catch{fail('Data curta inválida; confira dia e mês.');}
+  if(!cycle||!explicitSection)pending('Data sem ano: período explícito dos lançamentos e seção de transações necessários.');
+  const candidates=[];
+  for(let year=Number(cycle.from.slice(0,4));year<=Number(cycle.to.slice(0,4));year++){try{const d=parseDate(resolved+'/'+year);if(d>=cycle.from&&d<=cycle.to)candidates.push(d);}catch{}}
+  if(candidates.length!==1)pending('Data curta fora do período explícito ou ambígua; revisão necessária.');resolved=candidates[0];
+ }
+ row.date=parseDate(resolved);return row;
 }
 function itauTotal_(line){
  const n=normalize(line),label='(?:total (?:desta |da )?fatura|valor total (?:desta |da )?fatura|total a pagar|total (?:dos |de )?lancamentos atuais)';
@@ -109,15 +111,16 @@ function itauTotal_(line){
 function readItau(text,options={}){
  const items=[],issues=[],totals=[],metadata={},lines=text.split(/\r?\n/).map(s=>s.replace(/\u00a0/g,' ').trim()),cycle=options.reviewPeriod?reviewPeriod_(options.reviewPeriod):itauCycle_(lines);let section='transactions',explicitSection=false;
  metadata.dateContext=cycle?(options.reviewPeriod?'período confirmado na revisão':'período explícito'):'ausente ou ambíguo';if(options.reviewPeriod)metadata.reviewPeriod={from:cycle.from,to:cycle.to};
- const consumed=new Set(),recognizedSources=new Set(),summarySources=new Set(),futureReferences={},futureLines=new Set(),previousPayments=[],reportedPreviousPayments=[],previousLines=new Set();let previousConflict=false;
- lines.forEach((line,i)=>{const n=normalize(line);if(!line||consumed.has(i))return;
+ const consumed=new Set(),recognizedSources=new Set(),summarySources=new Set(),futureReferences={},futureLines=new Set(),previousPayments=[],reportedPreviousPayments=[],previousLines=new Set(),pendingDateItems=[];let previousConflict=false;
+ lines.forEach((line,i)=>{const n=normalize(line);if(!line||consumed.has(i))return;let pendingUsed=[];
+  if(Array.isArray(options.layoutSections)&&options.layoutSections.length===lines.length){const scope=options.layoutSections[i];if(['current','previousPayments','future','offer','summary','unknown'].includes(scope)){section=scope==='current'?'transactions':scope;explicitSection=scope==='current';}}
   if(/^(?:opcoes de parcelamento|parcelamento da fatura|simulacao|oferta de parcelamento)\b/.test(n)){section='offer';explicitSection=false;issues.push('Linha '+(i+1)+': oferta de financiamento excluída das compras.');return;}
   if(/^(?:compras parceladas.*proximas|parcelas futuras|compromissos futuros)\b/.test(n)){section='future';explicitSection=false;return;}
   if(/^(?:pagamentos efetuados|pagamentos anteriores)(?:\s*\(continuacao\))?$/.test(n)){section='previousPayments';explicitSection=false;return;}
   if(/^(?:lancamentos(?: atuais|: compras e saques|: produtos e servicos)?|compras e saques|pagamentos e creditos|transacoes do cartao)(?:\s*\(continuacao\))?$/.test(n)){section='transactions';explicitSection=true;return;}
   if(/^resumo da fatura$/.test(n)){section='summary';explicitSection=false;return;}
   try{
-   if(section==='future'){
+   if(section==='future'||section==='unknown'&&/^(?:proxima fatura(?: parcelada)?|demais (?:faturas|parcelas)(?: parceladas| futuras)?|total futuro|total (?:para |das )proximas faturas)\b/.test(n)){
     const f=n.match(/^(proxima fatura(?: parcelada)?|demais (?:faturas|parcelas)(?: parceladas| futuras)?|total futuro|total (?:para |das )?proximas faturas)\s*[:=]?\s*(?:r\$\s*)?([\d.]+,\d{2})$/);
     if(f){const key=/^proxima/.test(f[1])?'nextCents':/^demais/.test(f[1])?'remainingCents':'totalCents';(futureReferences[key]||=[]).push(money(f[2]));futureLines.add(i);summarySources.add(i);return;}
    }
@@ -127,7 +130,7 @@ function readItau(text,options={}){
     const sum=n.match(/^total (?:de )?pagamentos(?: efetuados| anteriores)?\s*:?\s*(?:r\$\s*)?(-?[\d.]+,\d{2})$/);
     if(sum){reportedPreviousPayments.push(Math.abs(money(sum[1])));summarySources.add(i);previousLines.add(i);return;}
    }
-   if(section!=='offer'&&section!=='future'&&section!=='previousPayments'){
+   if(section!=='offer'&&(section!=='future'&&section!=='previousPayments'||/^total (?:dos |de )?lancamentos atuais\b/.test(n))){
 
     const total=itauTotal_(line);if((total.label||total.value!=null)&&/^total (?:dos |de )?lancamentos atuais/.test(n))metadata.totalScope='currentCharges';if(total.value!=null){totals.push(total.value);summarySources.add(i);if(/^total (?:dos |de )?lancamentos atuais/.test(n))metadata.totalScope='currentCharges';return;}
     if(total.label){const next=(lines[i+1]||'').match(/^(?:R\$\s*)?(-?[\d.]+,\d{2})$/i);if(next){totals.push(money(next[1]));consumed.add(i+1);summarySources.add(i);summarySources.add(i+1);}else issues.push('Linha '+(i+1)+': referência ao total sem valor adjacente; conferir.');return;}
@@ -143,8 +146,8 @@ function readItau(text,options={}){
     if(!/^\d{2}\/\d{2}(?:\/\d{4})?\s*$/.test(line)&&amountOnly.test(next)){combined=line+' '+next;used=[i+1];}
     else if(/^\d{2}\/\d{2}(?:\/\d{4})?\s*$/.test(line)&&/^[A-Za-zÀ-ÿ]/.test(next)&&!/[\d.]+,\d{2}|^(?:total|limite|saldo|vencimento|lancamentos|resumo|opcoes|parcelas futuras|compras e saques|pagamentos e creditos)\b/.test(normalize(next))&&amountOnly.test(after)){combined=line+' '+next+' '+after;used=[i+1,i+2];}
    }
-   const row=itauRow_(combined,cycle,explicitSection);if(row){items.push(row);recognizedSources.add(i);used.forEach(n=>{consumed.add(n);recognizedSources.add(n);});}else issues.push('Linha '+(i+1)+': formato Itaú não reconhecido; confira o documento.');
-  }catch(e){issues.push('Linha '+(i+1)+': '+e.message);}
+   pendingUsed=used;const row=itauRow_(combined,cycle,explicitSection);if(row){items.push(row);recognizedSources.add(i);used.forEach(n=>{consumed.add(n);recognizedSources.add(n);});}else issues.push('Linha '+(i+1)+': formato Itaú não reconhecido; confira o documento.');
+  }catch(e){if(e.candidate){pendingDateItems.push({line:i+1,sourceLines:[i+1,...pendingUsed.map(n=>n+1)],...e.candidate});pendingUsed.forEach(n=>consumed.add(n));}issues.push('Linha '+(i+1)+': '+e.message);}
  });
  if(previousPayments.length||reportedPreviousPayments.length){const reported=[...new Set(reportedPreviousPayments)],calculated=previousPayments.reduce((s,v)=>integer(s+v),0);previousConflict=reported.length>1||previousPayments.length&&reported.length===1&&reported[0]!==calculated;metadata.previousPaymentsCents=previousPayments.length?calculated:reported.length===1?reported[0]:0;metadata.previousPaymentsCheck=previousConflict?'divergente':'seção separada';if(previousConflict){for(const i of previousLines)summarySources.delete(i);issues.push('Pagamentos anteriores divergentes; confira as referências sem alterar compras atuais.');}else issues.push('Pagamentos anteriores conferidos como histórico; não reduzem os lançamentos atuais.');}
  if(Object.keys(futureReferences).length){
@@ -155,7 +158,7 @@ function readItau(text,options={}){
   if(conflicting){for(const i of futureLines)summarySources.delete(i);issues.push('Resumo futuro divergente; nenhuma parcela foi criada a partir do resumo.');}
   else issues.push('Resumo de próximas faturas usado somente para conferência; não cria compras ou parcelas.');
  }
- return {...bankResult(items,issues,totals,metadata,'Itaú'),sourceAccounting:{recognized:[...recognizedSources],summary:[...summarySources]}};
+ return {...bankResult(items,issues,totals,metadata,'Itaú'),pendingDateItems,sourceAccounting:{recognized:[...recognizedSources],summary:[...summarySources]}};
 }
 function readBradesco(text){
  const items=[],issues=[],totals=[],metadata={future:{}};let section='transactions';
@@ -207,11 +210,11 @@ function pdfDiagnostics(text,result){
  const dated=/^\s*(?:\d{4}-\d{2}-\d{2}|\d{1,2}[\/.-]\d{2}|\d{1,2}\s+[a-zç]{3})(?:\b|\s)/i.test(line);
  const monetary=/^\s*(?:R\$\s*)?-?[\d.,]+[,.]\d{2}\s*[DC-]?\s*$/i.test(line)||/(?:R\$|[\d.]+,\d{2})\s*[DC-]?\s*$/i.test(line);
  const excluded=/oferta|resumo não virou|item em seção/.test(issue);
- if(!obviousInfo&&!excluded&&(dated||monetary))exceptions.push({line:index+1,source:line,reason:issue,resolved:false});else {informational++;informationalLines.add(index);}
+ if(!obviousInfo&&!excluded&&(dated||monetary)){const pending=result.pendingDateItems?.find(p=>p.line===index+1);exceptions.push({line:index+1,source:pending?pending.sourceLines.map(n=>lines[n-1]).join('\n'):line,reason:issue,resolved:false,...(pending?{suggested:{note:pending.note,amountCents:pending.amountCents,kind:pending.kind,installmentNumber:pending.installmentNumber,installmentsTotal:pending.installmentsTotal},relatedLines:pending.sourceLines}: {})});}else {informational++;informationalLines.add(index);}
  }
  // Itaú coverage is a review obligation, even for candidates previously grouped as information.
  if(result.sourceAccounting){
-  const recognized=new Set(result.sourceAccounting.recognized),summary=new Set(result.sourceAccounting.summary),reviewed=new Set(exceptions.map(e=>e.line-1));
+  const recognized=new Set(result.sourceAccounting.recognized),summary=new Set(result.sourceAccounting.summary),reviewed=new Set(exceptions.flatMap(e=>(e.relatedLines||[e.line]).map(n=>n-1)));
   lines.forEach((line,i)=>{if(recognized.has(i)||summary.has(i)||reviewed.has(i))return;
    if(!/^\s*(?:\d{4}-\d{2}-\d{2}|\d{2}\/\d{2})\b/.test(line)&&!/[\d.]+,\d{2}\s*[DC-]?\s*$/i.test(line))return;
    const reason='Linha '+(i+1)+': candidato financeiro fora do reconhecimento; revisar seção, tipo e valor, inclusive ofertas e resumos. Nenhum lançamento criado.';
@@ -222,7 +225,7 @@ function pdfDiagnostics(text,result){
  const {sourceAccounting,...clean}=result;
  const diagnostics={exceptions,informational,unresolved:exceptions.length};
  if(sourceAccounting){
-  const recognized=new Set(sourceAccounting.recognized),summary=new Set(sourceAccounting.summary),reviewed=new Set(exceptions.map(e=>e.line-1));
+  const recognized=new Set(sourceAccounting.recognized),summary=new Set(sourceAccounting.summary),reviewed=new Set(exceptions.flatMap(e=>(e.relatedLines||[e.line]).map(n=>n-1)));
   const coverage={financialCandidateLines:0,recognizedSourceLines:0,exceptionSourceLines:0,summarySourceLines:0,financialLinesOutsideReview:0};
   lines.forEach((line,i)=>{if(!/^\s*(?:\d{4}-\d{2}-\d{2}|\d{2}\/\d{2})\b/.test(line)&&!/[\d.]+,\d{2}\s*[DC-]?\s*$/i.test(line))return;coverage.financialCandidateLines++;if(recognized.has(i))coverage.recognizedSourceLines++;else if(reviewed.has(i))coverage.exceptionSourceLines++;else if(summary.has(i))coverage.summarySourceLines++;else coverage.financialLinesOutsideReview++;});
   diagnostics.coverage=coverage;

@@ -28,7 +28,7 @@ export function textRows(items) {
 }
 // Positional Itaú reconstruction. Every nonempty item is emitted exactly once.
 // Headers and money/date boundaries delimit independent visual blocks; uncertainty stays textual.
-export function itauTextRows(items) {
+export function itauTextRows(items, options = {}) {
   const norm=s=>s.normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim().toLowerCase();
   const dateStart=/^(?:\d{2}\/\d{2}(?:\/\d{4})?|\d{4}-\d{2}-\d{2})\b/;
   const dateOnly=/^(?:\d{2}\/\d{2}(?:\/\d{4})?|\d{4}-\d{2}-\d{2})$/;
@@ -61,8 +61,9 @@ export function itauTextRows(items) {
     if(/^(?:total (?:desta |da )?fatura|valor total (?:desta |da )?fatura|total a pagar|total (?:dos |de )?lancamentos atuais)\b/.test(norm(text))&&(text.match(/[\d.]+,\d{2}\b/g)||[]).length===1)for(const cell of same)assigned.set(cell,columnOf(item));
   }
   for(const item of source)blocks[assigned.has(item)?assigned.get(item):columnOf(item)].push(item);
-  const output=[];
+  const output=[],sections=[];
   for(const elements of blocks){
+    const blockStart=output.length;
     const rows=[];
     for(const item of elements.slice().sort((a,b)=>y(b)-y(a)||x(a)-x(b))){const last=rows.at(-1);if(last&&Math.abs(last.y-y(item))<=2)last.items.push(item);else rows.push({y:y(item),items:[item]});}
     const chunks=[];
@@ -74,6 +75,11 @@ export function itauTextRows(items) {
     }
     for(let n=0;n<chunks.length;n++){
       const row=chunks[n],cells=row.items,text=join(cells);let line=text,used=0;
+      // A wrapped, explicit label is joined only within the same column and a nearby baseline.
+      if(/^(?:total (?:dos |de )?lancamentos|total dos)\s*:?$/.test(norm(text))&&chunks[n+1]){
+        const next=chunks[n+1],extra=join(next.items),distance=row.y-next.y;
+        if(distance>2&&distance<=Math.max(8,Math.abs(cells[0].transform[0]||10))*2.2&&Math.abs(x(next.items[0])-x(cells[0]))<=40&&/^(?:atuais|lancamentos atuais)(?:\s*:?\s*(?:r\$\s*)?-?[\d.]+,\d{2})?\s*:?$/.test(norm(extra))){line=text.replace(/:\s*$/,'')+' '+extra;used=1;}
+      }
       if(dateStart.test(text)){
         const height=Math.max(8,Math.abs(cells[0].transform[0]||10)),descriptionX=dateOnly.test(cells[0].str.trim())&&cells[1]?x(cells[1]):x(cells[0])+Math.min(40,height*3);let combined=text,lastY=row.y;
         for(let k=n+1;k<chunks.length&&k<=n+4;k++){
@@ -97,8 +103,26 @@ export function itauTextRows(items) {
       }
       if(!handled)output.push(line);
     }
+    // Scope is local to a physical column, never inherited from another column/page.
+    let scope='unknown',unknownStart=blockStart;
+    for(let i=blockStart;i<output.length;i++){
+      const n=norm(output[i]);
+      if(/^(?:lancamentos(?: atuais|: compras e saques|: produtos e servicos)?|compras e saques|pagamentos e creditos|transacoes do cartao)(?:\s*\(continuacao\))?$/.test(n))scope='current';
+      else if(/^(?:pagamentos efetuados|pagamentos anteriores)(?:\s*\(continuacao\))?$/.test(n))scope='previousPayments';
+      else if(/^(?:compras parceladas.*proximas|parcelas futuras|compromissos futuros)\b/.test(n))scope='future';
+      else if(/^(?:opcoes de parcelamento|parcelamento da fatura|simulacao|oferta de parcelamento)\b/.test(n))scope='offer';
+      else if(/^resumo da fatura$/.test(n))scope='summary';
+      if(scope!=='unknown')unknownStart=i+1;
+      sections[i]=scope;
+      // A closing current-total label can delimit an otherwise unlabelled continuation table.
+      if(/^total (?:dos |de )?lancamentos atuais\b/.test(n)&&scope==='unknown'){
+        const table=output.slice(unknownStart,i),hasHeader=table.some(s=>/^data\s+/i.test(s)),datedRows=table.filter(s=>dateStart.test(s)&&moneyEnd.test(s)).length;
+        if(hasHeader||datedRows>=3)for(let j=unknownStart;j<=i;j++)sections[j]='current';
+        sections[i]='current';
+      }
+    }
   }
-  return output;
+  return options.withSections?{rows:output,sections}:output;
 }
 export async function readPDF(file, options = {}) {
   const password = options.password || undefined;
@@ -126,7 +150,7 @@ export async function readPDF(file, options = {}) {
   try {
     const pdf = await task.promise;
     if (pdf.numPages > 100) throw new Error('PDF excede 100 páginas.');
-    const lines = [];
+    const lines = [], layoutSections = [];
     let characters = 0;
     for (let p = 1; p <= pdf.numPages; p++) {
       const page = await pdf.getPage(p);
@@ -138,9 +162,10 @@ export async function readPDF(file, options = {}) {
       }
       // Optional local audit hook: the normal import path never installs it.
       if (typeof options.onPage === 'function') await options.onPage(content.items);
-      lines.push(...(options.bank==='Itaú'?itauTextRows(content.items):textRows(content.items)));
+      if(options.bank==='Itaú'){const layout=itauTextRows(content.items,{withSections:true});lines.push(...layout.rows);layoutSections.push(...layout.sections);}else lines.push(...textRows(content.items));
       page.cleanup();
     }
+    if(options.bank==='Itaú'&&typeof options.onLayout==='function')options.onLayout({sections:layoutSections});
     const text = lines.join('\n');
     if (!text.trim()) throw new Error('PDF sem texto extraível. Use CSV; não há OCR.');
     return text;

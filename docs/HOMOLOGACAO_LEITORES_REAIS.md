@@ -172,3 +172,29 @@ Nova execução protegida solicitada, com versão/hash conferidos antes da senha
 131 testes aprovados: 123 anteriores e oito novos. Casos novos usam valores diferentes das referências reais: pagamento anterior separado; total atual sem abatimento indevido; projeção e resumo futuro sem duplicação; datas curtas ainda pendentes sem período; limites e detalhes futuros preservados na revisão; referências conflitantes; descrição complementar em duas colunas com baselines diferentes; valor em linha adicional; âncoras de coluna sem cabeçalho; auditor protegido comparando referências privadas. Nenhum teste anterior removido. Sintaxe do wrapper PowerShell validada sem executar prompt de senha.
 
 Pacote privado sintético regenerado, anterior preservado; 226 arquivos e 12 exemplos exatos, banco isolado. Cache **33369deec4dece71**. Arquivos atualizados conferidos por HTTPS válido, preview somente 127.0.0.1:43189 e Funnel falso. Dados do navegador preservados. Atualizar o iPhone fechando e reabrindo online, sem limpar armazenamento; repetir a homologação física. Main preservada, sem deploy público.
+
+## Itaú — estrutura financeira preservada quando o ano está pendente
+
+Auditoria real **jabu-audit-6**, com hash confirmado pelo proprietário: quatro das cinco referências conferem (pagamento anterior e três campos futuros); total atual não reconhecido, uma transação pronta, 168 exceções, nenhuma compra parcelada pronta e zero candidatas fora da revisão. Projeção divergente/incompleta. Não houve conciliação real aprovada. Os valores financeiros reais não são reproduzidos aqui.
+
+Motor novo: **jabu-audit-7**, SHA-256 **e88aa7bac3fc098b329cfe7796ed8aab6b6b8100264a961c446f835fea8d9f50**. Nova auditoria protegida solicitada; resultados do motor 7 ainda não recebidos.
+
+### Falhas corrigidas e limites
+
+A resolução da data acontecia antes de preservar descrição, valor, tipo e parcelas: a ausência do ano interrompia a leitura desses campos. Agora campos monetários/parcelas são validados primeiro e, quando a data não pode ser confirmada, ficam em **pendingDateItems**, separados dos itens importáveis. Nenhum ano é atribuído; datas DD/MM impossíveis também não viram candidatos validados. O corretor individual recebe descrição, valor e parcela como sugestão e exige uma data completa válida. Fragmentos associados compartilham uma única decisão de revisão, mantendo todas as linhas-fonte cobertas. Isso não é transação aprovada nem gravação automática.
+
+O leitor retorna o escopo de cada linha por coluna/página, além do texto. Colunas não herdam seção futura de outra coluna. Uma continuação tabular sem cabeçalho de seção só pode receber escopo atual quando há total atual explícito fechando a tabela e cabeçalho tabular ou pelo menos três linhas financeiras de data/valor no mesmo bloco. Se houver seção futura/oferta explícita, seus detalhes não são reclassificados por essa regra. O mapa é descartado quando o texto bruto é editado, evitando escopo posicional obsoleto. Sem evidência, a seção continua pendente.
+
+Total de lançamentos atuais com rótulo explícito pode ser reconhecido após uma seção futura, sem buscar total genérico naquela seção ou em ofertas. Rótulo quebrado em baselines próximos da mesma coluna pode ser reunido; limites e totais concorrentes não fornecem valor de compensação. Resumos futuros explícitos continuam reconhecidos em continuação sem cabeçalho. Pagamento anterior e referências futuras mantêm tratamento separado, com regressões preservadas.
+
+### Relatório sem inflar reconhecimento
+
+transactions continua significando registros com data completa prontos para revisão final. structuralRecognition informa separadamente ready, awaitingDate, awaitingSection e installmentPurchases (inclui apenas prontos e candidatos da seção atual confirmada). monetaryCheck/futureCheck comparam numericamente esses candidatos com total e resumo, sem emitir valores. Mesmo quando coincidem, o resultado é **valores coincidem; revisão pendente**, nunca aprovação. Candidatos de seção incerta não entram nessa soma; demais exceções permanecem bloqueantes. Conferência provisória não valida ano, cobertura semântica ou transações desconhecidas.
+
+Executar o mesmo wrapper protegido, conferir versão/hash e usar -CompareReferences. Acrescentar -ReviewPeriod somente com período original confirmado pelo proprietário. Sem isso, é esperado que transactions continue baixo enquanto awaitingDate mostre registros estruturados pendentes. Enviar somente JSON agregado incluindo structuralRecognition, reviewReasons, itauStructure, referenceComparison, reconciliation, futureProjectionCheck e coverage. Não transmitir texto, senha, datas, valores ou imagens reais. Aprovação exige reconhecimento das transações, datas conferidas, conciliação exata e projeção coerente; não apenas menos exceções.
+
+### Evidência de testes
+
+139 testes aprovados, preservando os 131 anteriores e acrescentando oito. Casos novos: campos/parcelas sem inventar ano; total explícito após futuro; rótulo do total quebrado; fragmentos vinculados a uma decisão; vazamento de seção entre colunas; referências futuras em continuação; correção individual com data obrigatória e sem escrita; auditor protegido distinguindo conferência provisória de aprovação. Todas as fontes e referências desses testes são sintéticas.
+
+Pacote privado exclusivamente sintético regenerado com anterior preservado, 226 arquivos, 12 exemplos exatos e banco isolado. Cache **2d8fe75fdcfe8bea**. core.js/intelligence.js/pdf-reader.mjs/assets.js/sw.js comparados por HTTPS válido; preview apenas 127.0.0.1:43189, Serve privado e Funnel falso. Nenhum IndexedDB apagado. Testes físicos do iPhone e nova auditoria protegida continuam pendentes; main preservada e sem deploy público.
