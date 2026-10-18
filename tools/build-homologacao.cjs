@@ -6,7 +6,7 @@ function build(){
  // Explicit source allowlist: never copies repository, docs, attachments or browser storage.
  const files=['index.html','app.js','core.js','storage.js','intelligence.js','jabu.js','pdf-reader.mjs','styles.css','design-tokens.css','manifest.json','sw.js','assets.js'];
  for(const f of files)fs.copyFileSync(path.join('demo',f),path.join(out,f));
- for(const d of ['icons','vendor','faturas-sinteticas'])fs.cpSync(path.join('demo',d),path.join(out,d),{recursive:true});
+ for(const d of ['icons','vendor','faturas-sinteticas'])fs.cpSync(path.join('demo',d),path.join(out,d),{recursive:true,filter:source=>path.basename(source)!=='.gitkeep'});
  const replace=(f,a,b)=>{const p=path.join(out,f);const s=fs.readFileSync(p,'utf8');if(!s.includes(a))throw new Error('Marcador ausente: '+f);fs.writeFileSync(p,s.replace(a,()=>b));};
  replace('app.js',"const DB_NAME='despesasDemoDB'","const DB_NAME='jabuHomologacaoDB'");
  replace('intelligence.js',"new BroadcastChannel('fatura-demo-screen-lock')","new BroadcastChannel('jabu-homologacao-screen-lock')");

@@ -14,3 +14,8 @@ Sem PDFs bancários reais autorizados ou certificação de layouts. Safari físi
 80 testes aprovados (77 existentes + 3 novos). Capturas das seis telas a 375/390/430px, sem transbordamento horizontal. Ajustados resumos familiares, nomes longos, métricas móveis, nomes acessíveis e atualização do aviso de service worker. PDF sintético lido no navegador; recarga com servidor desligado preservou dados e consulta familiar.
 
 Pacote isolado gerado por tools/build-homologacao.cjs, com banco/canal próprios, seis cartões e duas pessoas fictícias, arquivos de exemplo offline e cabeçalhos preparados para Cloudflare Pages Direct Upload manual. Sem integração Git/deploy automático. Alternativa privada Tailscale Serve documentada. Nada publicado; Safari físico/compartilhamento nativo pendentes. Evidências e roteiro em docs/HOMOLOGACAO_VISUAL_IPHONE.md. Manter Draft.
+
+
+## Preparação privada Tailscale
+
+Verificador do pacote por allowlist/hash e comparação exata das 12 fixtures; marcador .gitkeep excluído da saída. 80 testes aprovados. Servidor somente em loopback e rotas do repositório recusadas. Cliente oficial instalado com autorização, autenticação feita pelo proprietário. HTTPS/Serve e restrições finais ainda dependem de confirmar tailnet e conectar iPhone; Funnel não configurado. Não registrar URL privada ou identidade no Git. Operação e checklist em docs/TAILSCALE_PRIVADO.md e docs/IPHONE_REGISTRO_HOMOLOGACAO.md. Sem deploy público, main preservada.
