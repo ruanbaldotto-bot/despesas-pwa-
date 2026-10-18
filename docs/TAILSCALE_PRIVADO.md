@@ -6,7 +6,7 @@ Windows NT 10.0 build 26200, Node 24.19.0. Tailscale oficial 1.104.1 instalado a
 
 Servidor sintético em segundo plano, somente 127.0.0.1:43189. GET / retorna 200 e cabeçalho Jabu Homologação. /.git/config, /tools/github-pr.cjs, /docs/PR.md e tentativa de caminho pai retornam 404. Nenhuma porta LAN/roteador foi aberta e o firewall não foi desativado.
 
-Na última verificação: nenhum outro dispositivo na tailnet; iPhone ainda não conectado. Serve e Funnel retornaram No serve config: nenhum encaminhamento configurado. URL HTTPS ainda não ativada, certificado e acesso privado pelo iPhone não testados. Aguardar confirmação da tailnet e conexão do iPhone antes de concluir as restrições. Nenhum serviço público foi publicado.
+Atualização concluída: iPhone iOS online na mesma conta/tailnet, habilitação oficial de Serve/HTTPS realizada pelo proprietário. Serve em segundo plano, HTTPS 443 → somente http://127.0.0.1:43189. Configuração AllowFunnel ausente/falsa: Funnel desativado. Certificado Let’s Encrypt validado pela verificação TLS normal (authorized=true), resposta HTTPS 200 e conteúdo Jabu Homologação. A URL privada é obtida em serve status e não é gravada no Git. A página também foi aberta pelo HTTPS no navegador integrado do computador; isso não comprova execução no Safari físico. Nenhum serviço público foi publicado.
 
 ## Pacote sintético
 
@@ -16,15 +16,15 @@ Foi removido da geração somente o marcador icons/.gitkeep, sem utilidade em ho
 
 80 testes aprovados, zero falhas, incluindo regressões e verificação positiva/negativa do pacote. Log sanitizado: test-output-tailscale.txt. Runner node --test tests/*.test.cjs, equivalente ao script npm test; npm indisponível neste ambiente. Não são testes em iPhone físico.
 
-## Permissões: ponto ainda pendente
+## Permissões aplicadas e verificadas
 
-A inspeção estruturada do filtro efetivo recebido pelo cliente identificou regra ampla de tráfego entre membros da tailnet, em todos os protocolos/portas. Não foram impressos mapas completos ou chaves e nenhuma política global foi substituída. A existência de apenas um usuário/dispositivo agora não garante que futuros membros serão autorizados para este app.
+O console autenticado continha uma única regra geral permitindo todas as conexões. Ela foi editada para permitir somente os endereços Tailscale IPv4/IPv6 do iPhone confirmado como origem, os endereços deste computador como destino e tcp:443. Não foi apenas adicionada uma regra estreita sobre uma permissão ampla: a regra abrangente foi substituída. Não foram alteradas as seções separadas de SSH/autoaprovação, nem criados novos usuários ou credenciais.
 
-Após o iPhone conectar e a tailnet ser confirmada, revisar a política no console administrativo oficial. Restringir o destino deste computador a HTTPS 443 a partir do iPhone autorizado, preservando outras regras de serviços legítimos. Uma nova regra específica não restringe uma regra anterior mais ampla: localizar e remover/limitar a permissão abrangente que também cubra este destino, com testes de política antes de salvar. Não substituir cegamente a política de toda a tailnet.
+O cliente recebeu exatamente uma regra efetiva, TCP apenas, porta inicial/final 443, origens /32 e /128 correspondentes ao iPhone. Serve contém um único proxy para a porta local 43189. Não há permissão de rede para 22 ou 43189 nessa regra. A própria conectividade de controle do Tailscale permanece ativa. Como só havia este computador e o iPhone na tailnet, não foram removidas regras específicas de outros serviços; futuras necessidades de acesso exigem novas regras deliberadas.
 
-Exemplo conceitual de grant para adaptar no console (não aplicado, placeholders não são configuração válida): src = IP_TAILSCALE_DO_IPHONE, dst = IP_TAILSCALE_DO_JABU, ip = tcp:443. Considerar IPv4/IPv6 e testes negativos para outro usuário/dispositivo e portas diferentes. Não conceder SSH, subnet routing, exit node ou Funnel. Depois de aplicar, confirmar o filtro efetivo recebido no computador e o acesso do iPhone. Se faltar sessão administrativa ou permissão, o proprietário deve participar; não pedir token administrativo no chat.
+Verificação de configuração concluída; teste ativo de um terceiro dispositivo não autorizado e abertura no Safari físico ainda pendentes. IPs estão vinculados aos dispositivos atuais: se o iPhone for removido/recriado, revisar a regra. Não ampliar para todos os usuários para resolver falha. A proposta com endereços concretos permanece em dist/tailscale-jabu-restricao-proposta.json, ignorada pelo Git. Nenhum endereço de tailnet, e-mail ou captura administrativa entrou no repositório.
 
-## Ativar Serve após as verificações
+## Iniciar, consultar e parar o ambiente
 
 Sintaxe consultada na CLI instalada (1.104.1): serve --bg target, HTTPS padrão; serve status --json para conferência. O alvo é sempre a porta loopback, nunca diretório do repositório.
 
@@ -35,7 +35,7 @@ No PowerShell:
 
 O comando acima é a forma manual em primeiro plano; Ctrl+C encerra somente esse servidor. Nesta sessão há um processo de servidor em segundo plano já iniciado: não iniciar uma cópia sobre a mesma porta. Para encerrar o processo de fundo, consultar Get-NetTCPConnection -LocalAddress 127.0.0.1 -LocalPort 43189 -State Listen, conferir o PID/linha de comando com Get-CimInstance Win32_Process e usar Stop-Process somente no Node confirmado com tools/preview.cjs --homologacao. Não encerrar outros processos Node.
 
-Em outro terminal, depois de tailnet/restrições confirmadas:
+Em outro terminal, para retomar a mesma configuração privada já validada:
 
     & 'C:\Program Files\Tailscale\tailscale.exe' serve --bg http://127.0.0.1:43189
     & 'C:\Program Files\Tailscale\tailscale.exe' serve status --json
@@ -62,7 +62,7 @@ Antes de executar, consultar serve status e confirmar que 443 ainda corresponde 
 
 ## Riscos restantes
 
-IndexedDB em claro, trava casual e backup criptografado somente no arquivo exportado. Scripts da mesma origem, acesso ao perfil/aparelho ou computador comprometido continuam riscos. Tailnet usa identidade/dispositivos e permissões: ACL ampla pode permitir outros membros; nenhuma alegação de restrição por aparelho até verificar. Provedor de coordenação conhece metadados e o hostname do certificado pode aparecer publicamente. Computador deve ficar ligado; suspensão interrompe acesso. Nenhum teste físico aprovado nesta rodada. Não há Cloudflare/GitHub Pages, Funnel, compartilhamento de documentos ou alteração de main.
+IndexedDB em claro, trava casual e backup criptografado somente no arquivo exportado. Scripts da mesma origem, acesso ao perfil/aparelho ou computador comprometido continuam riscos. Tailnet usa identidade/dispositivos e permissões: a regra atual está restrita ao iPhone confirmado; alterações futuras ou recriação dos dispositivos exigem revisão. Provedor de coordenação conhece metadados e o hostname do certificado pode aparecer publicamente. Computador deve ficar ligado; suspensão interrompe acesso. Nenhum teste físico aprovado nesta rodada. Não há Cloudflare/GitHub Pages, Funnel, compartilhamento de documentos ou alteração de main.
 
 Referências oficiais:
 - https://tailscale.com/download/windows

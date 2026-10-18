@@ -19,3 +19,6 @@ Pacote isolado gerado por tools/build-homologacao.cjs, com banco/canal próprios
 ## Preparação privada Tailscale
 
 Verificador do pacote por allowlist/hash e comparação exata das 12 fixtures; marcador .gitkeep excluído da saída. 80 testes aprovados. Servidor somente em loopback e rotas do repositório recusadas. Cliente oficial instalado com autorização, autenticação feita pelo proprietário. HTTPS/Serve e restrições finais ainda dependem de confirmar tailnet e conectar iPhone; Funnel não configurado. Não registrar URL privada ou identidade no Git. Operação e checklist em docs/TAILSCALE_PRIVADO.md e docs/IPHONE_REGISTRO_HOMOLOGACAO.md. Sem deploy público, main preservada.
+
+
+Atualização privada concluída: iPhone online na mesma conta, Serve HTTPS 443 ativo com proxy único para 127.0.0.1:43189 e Funnel ausente/falso. Regra geral ampla substituída por iPhone específico (IPv4/IPv6) → computador Jabu, somente tcp:443; filtro recebido confirmado. Certificado Let’s Encrypt válido e HTTP 200 sintético verificados no computador. URL/IPs/identidade permanecem fora do Git. Safari físico e teste negativo de terceiro aparelho continuam pendentes. Servidor e Serve mantidos disponíveis.

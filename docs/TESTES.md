@@ -57,3 +57,5 @@ A nova tentativa de abrir 127.0.0.1:4173 no navegador integrado retornou `net::E
 Usar o roteiro de INSTALACAO.md e documentos representativos autorizados de cada banco em ambiente local. Não inserir documentos reais no Git nem em serviços de teste. Conferir limites e diferenças de layout em USO.md; extração genérica conservadora e fixtures sintéticas não equivalem à validação dos bancos.
 
 Rodada Tailscale: 80/80 aprovados; verificador estrutural/exemplos reforçado, bind loopback e rotas 404 verificados. Resultado em test-output-tailscale.txt. Teste físico e configuração final privada pendentes conforme TAILSCALE_PRIVADO.md.
+
+Atualização Tailscale: iPhone online e mesma conta confirmados pela CLI; Serve HTTPS 443 com proxy único e sem Funnel; filtro efetivo somente origens do iPhone e TCP 443; TLS padrão autorizado e HTTP 200 sintético. Navegador integrado abriu a URL privada. Não equivale a teste Safari físico; nenhum novo teste automatizado necessário para esta atualização operacional/documental.
