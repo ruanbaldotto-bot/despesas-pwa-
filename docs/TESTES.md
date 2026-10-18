@@ -1,3 +1,9 @@
+# Correção de importação iOS — rodada atual
+
+85/85 testes aprovados, incluindo os 80 anteriores. Causa reproduzida na iteração assíncrona de ReadableStream dentro de getTextContent; correção local por getReader e fallback FileReader. Pacote privado/cache atualizados. Nova validação no iPhone ainda pendente. [Relatório e atualização](CORRECAO_IMPORTACAO_IOS.md).
+
+---
+
 # Preparação visual/iPhone — rodada atual
 
 80/80 testes aprovados (77 anteriores + 3 novos), 18 capturas em dimensões de iPhone e recarga com servidor local desligado. Sem teste em aparelho físico ou deploy. Relatório e instalação: [HOMOLOGACAO_VISUAL_IPHONE.md](HOMOLOGACAO_VISUAL_IPHONE.md). Log: test-output-iphone.txt.

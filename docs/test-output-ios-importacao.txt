@@ -1,0 +1,120 @@
+✔ artefatos locais: regras sincronizadas, manifest e todos os recursos de cache existem (196.0252ms)
+✔ service worker: somente GET local listado; ativação preserva caches de outros apps (123.5764ms)
+✔ service worker serve navegação inicial com query do cache canônico, sem cachear a query (3.3773ms)
+✔ demo gerada usa banco/canal/versionamento próprios sem copiar banco financeiro (910.2811ms)
+✔ centavos: formatos, limites e entrada decimal HTML (3.9473ms)
+✔ CSV sintético Santander (10.2328ms)
+✔ CSV sintético Porto Bank (1.4003ms)
+✔ CSV sintético Mercado Pago (3.2496ms)
+✔ CSV sintético Nubank (0.8646ms)
+✔ CSV sintético Itaú (0.6733ms)
+✔ CSV sintético Bradesco / Bradescard (0.567ms)
+✔ não inventa data nem parcela; linhas inválidas expostas (2.5908ms)
+✔ texto PDF preserva descrição e reconhece pagamento/estorno (2.0779ms)
+✔ conciliação e deduplicação conservadora (2.8649ms)
+✔ projeção 3 meses com composição (1.8778ms)
+✔ projeção 6 meses com composição (0.2784ms)
+✔ projeção 12 meses com composição (0.3796ms)
+✔ projeção 24 meses com composição (0.3271ms)
+✔ parcela confirmada substitui estimativa de grupo e evita duplicar recorrência (0.5982ms)
+✔ pagamento ao banco excluído da projeção (0.2231ms)
+✔ grupo exige mesma cronologia, cartão, valor e quantidade (0.6858ms)
+✔ divisão em centavos e resíduos por maior resto (1.6247ms)
+✔ demonstrativo isola pessoas e pagamentos; atribuição mais recente por sequência (1.1241ms)
+✔ atribuição parcelada só propaga em grupo confirmado (0.3795ms)
+✔ CSV protege fórmulas e aspas (0.4621ms)
+✔ backup autenticado: ida/volta, senha errada, adulteração (794.2597ms)
+✔ total explícito extraído sem inferir saldo ausente (1.7933ms)
+✔ recorrência antiga continua no horizonte e centavos não dependem da idade (0.7776ms)
+✔ associar nova parcela preserva grupo e seus vínculos anteriores (1.0416ms)
+✔ integração DOM: inicializa, cadastra categorias/cartões, arquiva sem apagar (806.3597ms)
+✔ integração DOM: dinheiro preserva decimal, família e CSV revisado (611.475ms)
+✔ migração real do esquema v4 para v5 preserva compras legadas (183.1403ms)
+Warning: Cannot load "@napi-rs/canvas" package: "Error: Cannot find module '@napi-rs/canvas'
+Require stack:
+- <projeto>\vendor\pdf.mjs".
+Warning: Cannot polyfill `DOMMatrix`, rendering may be broken.
+Warning: Cannot polyfill `Path2D`, rendering may be broken.
+✔ Santander: CSV sintético com estorno/pagamento e conciliação (13.8094ms)
+✔ Santander: PDF binário sintético e revisão de cabeçalho desconhecido (842.5596ms)
+✔ Porto Bank: CSV sintético com estorno/pagamento e conciliação (2.0362ms)
+✔ Porto Bank: PDF binário sintético e revisão de cabeçalho desconhecido (40.0685ms)
+✔ Mercado Pago: CSV sintético com estorno/pagamento e conciliação (1.6415ms)
+✔ Mercado Pago: PDF binário sintético e revisão de cabeçalho desconhecido (45.8594ms)
+✔ Nubank: CSV sintético com estorno/pagamento e conciliação (11.7192ms)
+✔ Nubank: PDF binário sintético e revisão de cabeçalho desconhecido (30.0982ms)
+✔ PDF sem ano mantém pendência em vez de inferir data (0.5822ms)
+✔ CSV rejeita cabeçalho ambíguo, campo extra e aspas malformadas (3.6471ms)
+✔ CSV preserva descrição multilinha, CRLF, aspas e ponto e vírgula (0.9471ms)
+✔ valor negativo vira crédito; palavra no meio do nome não vira pagamento (0.4542ms)
+✔ parcelas em outubro/dezembro estimam novembro e janeiro sem duplicar confirmados (2.2408ms)
+✔ nova divisão só propaga a partir da competência da origem (1.3738ms)
+✔ arredondamento conserva centavos em 306 divisões sintéticas (4.5197ms)
+✔ centavos perto do limite seguro não passam por arredondamento decimal (0.706ms)
+✔ PDF acima do limite é recusado antes de ler o arquivo (1.6028ms)
+Warning: Cannot load "@napi-rs/canvas" package: "Error: Cannot find module '@napi-rs/canvas'
+Require stack:
+- <projeto>\vendor\pdf.mjs".
+Warning: Cannot polyfill `DOMMatrix`, rendering may be broken.
+Warning: Cannot polyfill `Path2D`, rendering may be broken.
+Warning: getTextContent - ignoring errors during "GetTextContent: page 0" task: "Error: Worker task was terminated".
+✔ WebKit sem ReadableStream asyncIterator: reproduz dependência e corrige PDF/CSV/senha reais (761.598ms)
+✔ CSV via FileReader sem File.arrayBuffer/File.text: revisão, conciliação e gravação (971.5916ms)
+✔ leitor getReader libera lock ao concluir e cancela em falha (6.7033ms)
+✔ falha de leitura local é segura e não reflete conteúdo privado (1.1639ms)
+Warning: Cannot load "@napi-rs/canvas" package: "Error: Cannot find module '@napi-rs/canvas'
+Require stack:
+- <projeto>\vendor\pdf.mjs".
+Warning: Cannot polyfill `DOMMatrix`, rendering may be broken.
+Warning: Cannot polyfill `Path2D`, rendering may be broken.
+✔ PDF protegido via FileReader: extrator real e revisão sem gravar senha (380.7669ms)
+✔ homologação: carga fictícia preserva dados existentes e backup válido (923.9923ms)
+✔ homologação: recusa carga no banco principal (298.091ms)
+✔ pacote HTTPS: allowlist, banco próprio, cache completo e recusa sobrescrita (2688.2905ms)
+Warning: Cannot load "@napi-rs/canvas" package: "Error: Cannot find module '@napi-rs/canvas'
+Require stack:
+- <projeto>\vendor\pdf.mjs".
+Warning: Cannot polyfill `DOMMatrix`, rendering may be broken.
+Warning: Cannot polyfill `Path2D`, rendering may be broken.
+✔ Itaú: adaptador CSV e PDF específico, total e ofertas (721.9498ms)
+✔ Bradesco / Bradescard: adaptador CSV e PDF específico, total e ofertas (38.2823ms)
+✔ Bradescard: parênteses e resumo não criam parcelas duplicadas (5.5992ms)
+✔ novos adaptadores recusam ano ausente sem inventá-lo (0.9554ms)
+✔ Bradesco: totais conflitantes e resumo futuro divergente permanecem incertos (0.5362ms)
+✔ PDF criptografado sintético: segredo aleatório em memória, erro seguro e sucesso (65.5873ms)
+✔ detecção conservadora de instituição e compatibilidade com seis bancos (1.3023ms)
+✔ Bradesco: persistência, divisão familiar e restauração preservam centavos e metadados (226.3869ms)
+✔ Jabu: telas, navegação e filtros de cartão preservam dados (813.4984ms)
+✔ Itaú na interface: senha temporária descartada, revisão e duplicidade atômica (534.0654ms)
+✔ família: resumo individual exibe quantidades, recebimentos e saldo (275.4977ms)
+✔ tokens de texto atendem contraste AA e layout define contenção mobile (2.9375ms)
+Warning: Cannot load "@napi-rs/canvas" package: "Error: Cannot find module '@napi-rs/canvas'
+Require stack:
+- <projeto>\vendor\pdf.mjs".
+Warning: Cannot polyfill `DOMMatrix`, rendering may be broken.
+Warning: Cannot polyfill `Path2D`, rendering may be broken.
+Warning: Indexing all PDF objects
+✔ PDF real sintético: extração local e reconhecimento (607.8239ms)
+✔ PDF inválido falha explicitamente (6.1303ms)
+✔ envelope rejeita bytes inválidos e metadados incompletos antes da derivação (141.5366ms)
+✔ backup recusa dados financeiros e eventos adulterados no staging (12.9586ms)
+✔ compartilhamento exige segundo toque, conserva ativação e isola terceiros (674.6102ms)
+✔ cancelar seletor de compartilhamento não vira falha nem envio adicional (347.9487ms)
+✔ trava oculta antes de aguardar banco, limpa senha/impressão e bloqueia por inatividade (760.2645ms)
+✔ editar fonte invalida revisão e impede salvar dados antigos (128.6236ms)
+✔ backup grande falha antes de gerar arquivo que não poderia ser restaurado (31.6995ms)
+✔ importação e persistência com commit completo (78.7514ms)
+✔ duplicidade concorrente e repetida não gera compras órfãs (7.98ms)
+✔ total divergente cancela toda a transação (2.594ms)
+✔ divisão em lote atômica e histórico imutável ordenado (7.6809ms)
+✔ backup e restauração preservam anexos e não sobrescrevem em conflito (39.4903ms)
+✔ restauração aborta também inclusões de outras tabelas em conflito (4.8309ms)
+✔ persistência continua após fechar e reabrir o banco (4.5976ms)
+ℹ tests 85
+ℹ suites 0
+ℹ pass 85
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 10256.8036

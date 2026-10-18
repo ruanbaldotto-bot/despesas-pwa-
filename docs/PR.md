@@ -22,3 +22,10 @@ Verificador do pacote por allowlist/hash e comparação exata das 12 fixtures; m
 
 
 Atualização privada concluída: iPhone online na mesma conta, Serve HTTPS 443 ativo com proxy único para 127.0.0.1:43189 e Funnel ausente/falso. Regra geral ampla substituída por iPhone específico (IPv4/IPv6) → computador Jabu, somente tcp:443; filtro recebido confirmado. Certificado Let’s Encrypt válido e HTTP 200 sintético verificados no computador. URL/IPs/identidade permanecem fora do Git. Safari físico e teste negativo de terceiro aparelho continuam pendentes. Servidor e Serve mantidos disponíveis.
+
+
+## Correção real de importação WebKit
+
+Reproduz TypeError de PDFPageProxy.getTextContent no PDF.js 6.4.299 sem ReadableStream asyncIterator. Extrai texto por getReader().read(), preservando limites/worker e sem alterar vendor ou adicionar polyfill global. Novo leitor local usa FileReader quando File.arrayBuffer não existe, decodifica CSV e reaproveita bytes no PDF. Sem conteúdo/senhas nos logs ou envio de arquivos.
+
+85 testes aprovados (80 anteriores + 5 regressões), incluindo PDF real/senha e CSV sem iterador/métodos modernos, revisão e conciliação. Pacote sintético privado regenerado preservando o anterior; cache novo confirmado após fechar/reabrir cliente. PDF e CSV separados verificados no navegador integrado por HTTPS. Funnel continua desativado, main preservada. A correção no iPhone aguarda nova execução física. Relatório: docs/CORRECAO_IMPORTACAO_IOS.md.
